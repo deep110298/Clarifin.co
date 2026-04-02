@@ -18,3 +18,75 @@ id = "r5lIEeiFawJF49bk7FpZ1"
 uri = "file://artifacts/clarifin/public/images/clarity-path.png"
 type = "image"
 title = "Abstract path to clarity"
+
+[[generated]]
+id = "V4k2SGA1tJiBu69u2sxZm"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-hero-calm.png"
+type = "image"
+title = "Minimalist abstract financial clarity"
+
+[[generated]]
+id = "uhNs08ldjuIrRoIpNryJJ"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-app-calm.png"
+type = "image"
+title = "Minimalist finance app interface"
+
+[[generated]]
+id = "wlte_x5nJPj8OXiQY6WYe"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-lifestyle-calm.png"
+type = "image"
+title = "Minimalist serene workspace"
+
+[[generated]]
+id = "hYAmdC_1UBP0xQb0s4v7j"
+uri = "file://artifacts/mockup-sandbox/public/images/vibrant-hero.png"
+type = "image"
+title = "Hero dashboard UI mockup"
+
+[[generated]]
+id = "DqW5I3i4YL2EhsJixMY1y"
+uri = "file://artifacts/mockup-sandbox/public/images/vibrant-feature-1.png"
+type = "image"
+title = "Abstract 3d chart"
+
+[[generated]]
+id = "KveZQZK8tl072taNi-2-_"
+uri = "file://artifacts/mockup-sandbox/public/images/vibrant-feature-2.png"
+type = "image"
+title = "Abstract glowing sphere"
+
+[[generated]]
+id = "D_ymexxF0PZJ4ZUXKBvfu"
+uri = "file://artifacts/mockup-sandbox/public/images/warm-hero.png"
+type = "image"
+title = "Cozy coffee shop workspace"
+
+[[generated]]
+id = "sfwQWWSFpprG3wd0F1tyH"
+uri = "file://artifacts/mockup-sandbox/public/images/warm-feature.png"
+type = "image"
+title = "Friendly organic growth chart"
+
+[[generated]]
+id = "JsDalilizx4bchGHBQX_C"
+uri = "file://artifacts/mockup-sandbox/public/images/warm-testimonial.png"
+type = "image"
+title = "Friendly portrait illustration"
+
+[[generated]]
+id = "nK6sY3xBohpCsme1ZzMYO"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-hero.png"
+type = "image"
+title = "Abstract glowing financial charts"
+
+[[generated]]
+id = "3EOsbkXHXXWR9JX34SU5_"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-feature1.png"
+type = "image"
+title = "Glowing financial projection graph"
+
+[[generated]]
+id = "_7f026Q_UBJsFeeqN4hFN"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-feature2.png"
+type = "image"
+title = "Floating glowing numbers"

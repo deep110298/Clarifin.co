@@ -90,3 +90,27 @@ id = "_7f026Q_UBJsFeeqN4hFN"
 uri = "file://artifacts/mockup-sandbox/public/images/clarifin-feature2.png"
 type = "image"
 title = "Floating glowing numbers"
+
+[[generated]]
+id = "VDq5UfoMVUjKNvgKCG4p5"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-usecase-debt.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "_vrXBuJTwfYAiUbfJAKmu"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-usecase-retirement.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Msx6l5YBwvefhd61_zuhr"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-usecase-home.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "s8b1toBqrI_SF6Ub4as99"
+uri = "file://artifacts/mockup-sandbox/public/images/clarifin-divider.png"
+type = "image"
+title = "generated_image"

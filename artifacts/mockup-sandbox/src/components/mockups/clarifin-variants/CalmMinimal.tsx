@@ -1,4 +1,4 @@
-import { ArrowRight, Compass, Shield, Target } from "lucide-react";
+import { ArrowRight, Compass, Shield, Target, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function CalmMinimal() {
@@ -36,9 +36,9 @@ export function CalmMinimal() {
           </div>
         </div>
         <div className="flex-1 w-full">
-          <img 
-            src="/__mockup/images/clarifin-hero-calm.png" 
-            alt="Abstract representation of financial clarity" 
+          <img
+            src="/__mockup/images/clarifin-hero-calm.png"
+            alt="Abstract representation of financial clarity"
             className="w-full h-auto object-cover aspect-[4/3]"
           />
         </div>
@@ -46,13 +46,81 @@ export function CalmMinimal() {
 
       {/* Philosophy */}
       <section className="py-24 bg-white border-y border-gray-100">
-        <div className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto text-center max-w-3xl">
+        <div className="px-6 md:px-12 lg:px-24 max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-medium tracking-tight mb-6">A rational approach to wealth.</h2>
           <p className="text-lg text-[#475569] leading-relaxed font-light">
             We believe that financial anxiety stems from uncertainty. By providing sophisticated modeling tools wrapped in an uncompromisingly simple interface, we help you replace assumptions with mathematics.
           </p>
         </div>
       </section>
+
+      {/* Use Cases — 3 images */}
+      <section className="px-6 py-24 md:px-12 lg:px-24 max-w-7xl mx-auto">
+        <h2 className="text-3xl md:text-4xl font-medium tracking-tight mb-4">Decisions worth simulating.</h2>
+        <p className="text-[#475569] font-light text-lg mb-16 max-w-xl">
+          Three of the biggest financial crossroads people face. Clarifin gives you the model before you make the move.
+        </p>
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="space-y-5">
+            <div className="overflow-hidden aspect-[4/3]">
+              <img
+                src="/__mockup/images/clarifin-usecase-debt.png"
+                alt="Debt payoff strategy"
+                className="w-full h-full object-cover grayscale-[10%] hover:grayscale-0 transition-all duration-500"
+              />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[#94A3B8] mb-2">01 / Debt</p>
+              <h3 className="text-xl font-medium tracking-tight mb-2">Pay it off vs. invest the difference</h3>
+              <p className="text-sm text-[#475569] leading-relaxed font-light">
+                Model the true opportunity cost of carrying debt against the expected returns of putting that money to work.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-5">
+            <div className="overflow-hidden aspect-[4/3]">
+              <img
+                src="/__mockup/images/clarifin-usecase-retirement.png"
+                alt="Retirement planning"
+                className="w-full h-full object-cover grayscale-[10%] hover:grayscale-0 transition-all duration-500"
+              />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[#94A3B8] mb-2">02 / Retirement</p>
+              <h3 className="text-xl font-medium tracking-tight mb-2">When does work become optional?</h3>
+              <p className="text-sm text-[#475569] leading-relaxed font-light">
+                Simulate savings rates, expected returns, and inflation to find your exact financial independence date.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-5">
+            <div className="overflow-hidden aspect-[4/3]">
+              <img
+                src="/__mockup/images/clarifin-usecase-home.png"
+                alt="Home buying decision"
+                className="w-full h-full object-cover grayscale-[10%] hover:grayscale-0 transition-all duration-500"
+              />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[#94A3B8] mb-2">03 / Real Estate</p>
+              <h3 className="text-xl font-medium tracking-tight mb-2">Buy vs. rent, modeled for your market</h3>
+              <p className="text-sm text-[#475569] leading-relaxed font-light">
+                Factor in taxes, maintenance, and opportunity cost to make the most consequential purchase of your life with confidence.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Full-bleed divider image */}
+      <div className="w-full overflow-hidden" style={{ maxHeight: "320px" }}>
+        <img
+          src="/__mockup/images/clarifin-divider.png"
+          alt="Calm water surface"
+          className="w-full h-full object-cover"
+          style={{ objectPosition: "center center" }}
+        />
+      </div>
 
       {/* Features */}
       <section id="features" className="px-6 py-24 md:px-12 lg:px-24 max-w-7xl mx-auto">
@@ -61,9 +129,9 @@ export function CalmMinimal() {
             <div className="w-12 h-12 flex items-center justify-center bg-[#F1F5F9] text-[#64748B]">
               <Compass className="w-6 h-6" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-medium tracking-tight">Debt vs. Investing</h3>
+            <h3 className="text-xl font-medium tracking-tight">Scenario Comparison</h3>
             <p className="text-[#475569] leading-relaxed font-light text-sm md:text-base">
-              Compare the long-term impact of aggressively paying down a mortgage versus investing the difference in the market. See the math, not the emotion.
+              Run Scenario A and Scenario B side by side. See exactly which path builds more wealth over your chosen horizon.
             </p>
           </div>
           <div className="space-y-6">
@@ -87,13 +155,13 @@ export function CalmMinimal() {
         </div>
       </section>
 
-      {/* Visual Section */}
+      {/* Visual Section — 2-col with image */}
       <section className="px-6 py-12 md:px-12 lg:px-24 max-w-7xl mx-auto">
         <div className="grid md:grid-cols-2 gap-16 items-center">
           <div>
-            <img 
-              src="/__mockup/images/clarifin-app-calm.png" 
-              alt="Clarifin interface showing clean data visualization" 
+            <img
+              src="/__mockup/images/clarifin-app-calm.png"
+              alt="Clarifin interface showing clean data visualization"
               className="w-full h-auto object-cover"
             />
           </div>
@@ -120,10 +188,28 @@ export function CalmMinimal() {
         </div>
       </section>
 
+      {/* Stats row */}
+      <section className="py-20 bg-white border-y border-gray-100">
+        <div className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+          {[
+            { value: "47k+", label: "Scenarios simulated" },
+            { value: "12 min", label: "Avg. time to clarity" },
+            { value: "94%", label: "Feel more confident" },
+            { value: "$2.4M", label: "Avg. net worth modeled" },
+          ].map((stat, i) => (
+            <div key={i} className="space-y-2">
+              <p className="text-4xl md:text-5xl font-medium tracking-tight">{stat.value}</p>
+              <p className="text-sm text-[#94A3B8] uppercase tracking-widest">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Testimonial / Lifestyle */}
       <section className="py-24 bg-[#0F172A] text-white">
         <div className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
           <div className="space-y-8">
+            <TrendingUp className="w-8 h-8 text-[#94A3B8]" strokeWidth={1.5} />
             <p className="text-2xl md:text-3xl font-light leading-relaxed text-slate-300">
               "For the first time, I actually understand the trade-offs of my financial decisions. It's like having a fiduciary built into my browser."
             </p>
@@ -133,9 +219,9 @@ export function CalmMinimal() {
             </div>
           </div>
           <div>
-             <img 
-              src="/__mockup/images/clarifin-lifestyle-calm.png" 
-              alt="Serene minimalist workspace" 
+            <img
+              src="/__mockup/images/clarifin-lifestyle-calm.png"
+              alt="Serene minimalist workspace"
               className="w-full h-auto object-cover opacity-90 grayscale-[20%]"
             />
           </div>

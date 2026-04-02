@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "2ThwQynHpZIkFTNRlHCAV"
+uri = "file://artifacts/clarifin/public/images/hero-abstract.png"
+type = "image"
+title = "Abstract financial simulation shapes"
+
+[[generated]]
+id = "0LHMQzuEQw5ZZiAuGDGpt"
+uri = "file://artifacts/clarifin/public/images/feature-calm.png"
+type = "image"
+title = "Peaceful workspace coffee desk"
+
+[[generated]]
+id = "r5lIEeiFawJF49bk7FpZ1"
+uri = "file://artifacts/clarifin/public/images/clarity-path.png"
+type = "image"
+title = "Abstract path to clarity"

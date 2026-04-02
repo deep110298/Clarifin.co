@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Clarifin - Finance Simulator"
+version = "1.0.0"
+id = "artifacts/clarifin"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19120
+
+[services.development]
+run = "pnpm --filter @workspace/clarifin run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/clarifin", "run", "build" ]
+publicDir = "artifacts/clarifin/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19120"
+BASE_PATH = "/"

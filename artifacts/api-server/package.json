@@ -21,7 +21,8 @@
     "pino": "^9",
     "pino-http": "^10",
     "stripe": "^17.7.0",
-    "svix": "^1.64.0"
+    "svix": "^1.64.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

@@ -1,4 +1,4 @@
-import { ArrowRight, Compass, Shield, Target, TrendingUp } from "lucide-react";
+import { ArrowRight, Compass, Shield, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
@@ -193,29 +193,6 @@ export default function LandingPage() {
               <p className="text-sm text-[#94A3B8] uppercase tracking-widest">{stat.label}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Testimonial */}
-      <section className="py-24 bg-[#0F172A] text-white">
-        <div className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
-            <TrendingUp className="w-8 h-8 text-[#94A3B8]" strokeWidth={1.5} />
-            <p className="text-2xl md:text-3xl font-light leading-relaxed text-slate-300">
-              "For the first time, I actually understand the trade-offs of my financial decisions. It's like having a fiduciary built into my browser."
-            </p>
-            <div>
-              <p className="font-medium text-white">Sarah Jenkins</p>
-              <p className="text-slate-400 text-sm">Director of Engineering</p>
-            </div>
-          </div>
-          <div>
-            <img
-              src="/images/clarifin-lifestyle-calm.png"
-              alt="Serene minimalist workspace"
-              className="w-full h-auto object-cover opacity-90 grayscale-[20%]"
-            />
-          </div>
         </div>
       </section>
 

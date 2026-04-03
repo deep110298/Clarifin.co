@@ -12,9 +12,14 @@ export default function LandingPage() {
           <a href="#use-cases" className="hover:text-[#0F172A] transition-colors">Use Cases</a>
           <a href="#methodology" className="hover:text-[#0F172A] transition-colors">Methodology</a>
         </div>
-        <Button variant="outline" className="rounded-none border-[#0F172A] text-[#0F172A] hover:bg-[#0F172A] hover:text-white transition-colors">
-          Start simulation
-        </Button>
+        <div className="hidden md:flex items-center gap-4 text-sm font-medium text-[#475569]">
+          <a href="/sign-in" className="hover:text-[#0F172A] transition-colors">Sign in</a>
+        </div>
+        <a href="/sign-up">
+          <Button variant="outline" className="rounded-none border-[#0F172A] text-[#0F172A] hover:bg-[#0F172A] hover:text-white transition-colors">
+            Start simulation
+          </Button>
+        </a>
       </nav>
 
       {/* Hero */}
@@ -27,12 +32,16 @@ export default function LandingPage() {
             Test financial decisions in a controlled environment. Compare debt strategies, model mortgages, and simulate retirement paths without risking real capital.
           </p>
           <div className="flex items-center gap-4">
-            <Button className="rounded-none bg-[#0F172A] text-white hover:bg-[#1E293B] px-8 py-6 text-base">
-              Run your first scenario
-            </Button>
-            <Button variant="ghost" className="rounded-none text-[#0F172A] hover:bg-transparent hover:text-[#475569] px-4 py-6 text-base group">
-              View methodology <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </Button>
+            <a href="/sign-up">
+              <Button className="rounded-none bg-[#0F172A] text-white hover:bg-[#1E293B] px-8 py-6 text-base">
+                Run your first scenario
+              </Button>
+            </a>
+            <a href="/sign-in">
+              <Button variant="ghost" className="rounded-none text-[#0F172A] hover:bg-transparent hover:text-[#475569] px-4 py-6 text-base group">
+                Sign in <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </a>
           </div>
         </div>
         <div className="flex-1 w-full">

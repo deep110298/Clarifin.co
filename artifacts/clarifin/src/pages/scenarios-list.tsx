@@ -1,0 +1,187 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { Link } from "wouter"
+import { customFetch } from "@workspace/api-client-react"
+import { AppLayout } from "@/components/app/AppLayout"
+import {
+  Plus, GitCompare, ArrowRight, Briefcase, Home, GraduationCap,
+  Baby, Plane, Sliders, Trash2, AlertCircle, Zap,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+
+interface Scenario {
+  id: string
+  name: string
+  type: string
+  createdAt: string
+}
+
+interface Me {
+  plan: "free" | "plus" | "advisor"
+  profileComplete: boolean
+}
+
+const TYPE_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  "job-change": { label: "Job Change", icon: Briefcase, color: "bg-blue-100 text-blue-700" },
+  "buy-home": { label: "Buy a Home", icon: Home, color: "bg-purple-100 text-purple-700" },
+  "school": { label: "Back to School", icon: GraduationCap, color: "bg-orange-100 text-orange-700" },
+  "child": { label: "New Child", icon: Baby, color: "bg-pink-100 text-pink-700" },
+  "time-off": { label: "Time Off", icon: Plane, color: "bg-cyan-100 text-cyan-700" },
+  "custom": { label: "Custom", icon: Sliders, color: "bg-gray-100 text-gray-700" },
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+}
+
+export default function ScenariosListPage() {
+  const qc = useQueryClient()
+
+  const { data: scenarios = [], isLoading } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => customFetch<Scenario[]>("/api/scenarios"),
+  })
+
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => customFetch<Me>("/api/me"),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => customFetch(`/api/scenarios/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["scenarios"] }),
+  })
+
+  const isFree = me?.plan === "free"
+  const atLimit = isFree && scenarios.length >= 1
+
+  return (
+    <AppLayout>
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[#0D1B2A]">Your Scenarios</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Model any life decision and compare paths side by side.</p>
+          </div>
+          {!atLimit && (
+            <Link href="/app/scenarios/new">
+              <button className="flex items-center gap-2 bg-[#1D9E75] hover:bg-[#178f68] text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+                <Plus className="w-4 h-4" /> New scenario
+              </button>
+            </Link>
+          )}
+        </div>
+
+        {/* Free plan banner */}
+        {isFree && (
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-800">Free plan — 1 scenario limit</p>
+              <p className="text-xs text-amber-600 mt-0.5">Upgrade to Plus ($12/mo) for unlimited scenarios and 30-year projections.</p>
+            </div>
+            <button
+              onClick={() => customFetch("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan: "plus" }) })
+                .then((r: unknown) => { window.location.href = (r as { url: string }).url })}
+              className="shrink-0 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors"
+            >
+              Upgrade
+            </button>
+          </div>
+        )}
+
+        {/* Loading */}
+        {isLoading && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 p-5 h-36 animate-pulse" />
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && scenarios.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+              <GitCompare className="w-8 h-8 text-gray-300" />
+            </div>
+            <h3 className="font-semibold text-[#0D1B2A] mb-2">No scenarios yet</h3>
+            <p className="text-sm text-gray-400 max-w-xs mb-6">
+              Create your first scenario to see how a life decision affects your finances over 30 years.
+            </p>
+            <Link href="/app/scenarios/new">
+              <button className="flex items-center gap-2 bg-[#1D9E75] hover:bg-[#178f68] text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-colors">
+                <Plus className="w-4 h-4" /> Create first scenario
+              </button>
+            </Link>
+          </div>
+        )}
+
+        {/* Scenario grid */}
+        {!isLoading && scenarios.length > 0 && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {scenarios.map(s => {
+              const meta = TYPE_META[s.type] ?? TYPE_META.custom
+              const Icon = meta.icon
+              return (
+                <div key={s.id} className="group bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:border-[#1D9E75]/30 hover:shadow-md transition-all flex flex-col">
+                  <div className="flex items-start justify-between mb-3">
+                    <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full", meta.color)}>
+                      <Icon className="w-3.5 h-3.5" />
+                      {meta.label}
+                    </span>
+                    <button
+                      onClick={() => { if (confirm("Delete this scenario?")) deleteMutation.mutate(s.id) }}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <h3 className="font-semibold text-[#0D1B2A] mb-1 line-clamp-2">{s.name}</h3>
+                  <p className="text-xs text-gray-400 mb-4">{formatDate(s.createdAt)}</p>
+                  <div className="mt-auto">
+                    <Link href={`/app/scenarios/${s.id}`}>
+                      <button className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#1D9E75] hover:text-[#1D9E75] text-gray-600 py-2 rounded-lg text-sm font-medium transition-colors">
+                        View analysis <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* Add new card */}
+            {!atLimit && (
+              <Link href="/app/scenarios/new">
+                <div className="flex flex-col items-center justify-center gap-3 bg-white rounded-xl border-2 border-dashed border-gray-200 hover:border-[#1D9E75]/40 hover:bg-[#1D9E75]/5 p-5 h-full min-h-36 cursor-pointer transition-all group">
+                  <Plus className="w-8 h-8 text-gray-300 group-hover:text-[#1D9E75] transition-colors" />
+                  <span className="text-sm text-gray-400 group-hover:text-[#1D9E75] font-medium transition-colors">New scenario</span>
+                </div>
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* Advisor nudge */}
+        {scenarios.length > 0 && (
+          <div className="bg-[#0D1B2A] rounded-xl p-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#1D9E75]/20 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-[#1D9E75]" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Want a second opinion?</p>
+                <p className="text-xs text-white/50">Ask the AI advisor to compare your scenarios or dig into the numbers.</p>
+              </div>
+            </div>
+            <Link href="/app/advisor">
+              <button className="shrink-0 text-sm bg-[#1D9E75] hover:bg-[#178f68] text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                Ask AI
+              </button>
+            </Link>
+          </div>
+        )}
+      </div>
+    </AppLayout>
+  )
+}

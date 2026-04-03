@@ -1,5 +1,7 @@
 modules = ["nodejs-24"]
 
+run = "pnpm --filter @workspace/api-server run dev & pnpm --filter @workspace/clarifin run dev"
+
 [[artifacts]]
 id = "artifacts/api-server"
 

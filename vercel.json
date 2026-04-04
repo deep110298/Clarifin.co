@@ -1,7 +1,7 @@
 {
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "outputDirectory": "artifacts/clarifin/dist/public",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

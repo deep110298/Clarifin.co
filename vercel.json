@@ -1,6 +1,6 @@
 {
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "outputDirectory": "artifacts/clarifin/dist/public",
+  "buildCommand": "pnpm --filter @workspace/clarifin run build && cp -r artifacts/clarifin/dist/public public",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

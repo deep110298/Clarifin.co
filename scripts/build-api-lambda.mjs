@@ -8,12 +8,11 @@
  * Run AFTER generate-html-module.mjs (which generates generated-index.ts).
  */
 import { build as esbuild } from "esbuild";
-import esbuildPluginPino from "esbuild-plugin-pino";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// esbuild-plugin-pino uses require() internally
+// esbuild uses require() internally for some plugins
 globalThis.require = createRequire(import.meta.url);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,7 +46,6 @@ await esbuild({
     "usb", "workerd", "wrangler", "zeromq", "zeromq-prebuilt",
     "playwright", "puppeteer", "puppeteer-core", "electron",
   ],
-  plugins: [esbuildPluginPino({ transports: ["pino-pretty"] })],
   banner: {
     js: `import { createRequire as __crReq } from 'node:module';
 import __path from 'node:path';

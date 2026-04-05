@@ -1,15 +1,5 @@
 modules = ["nodejs-24"]
 
-run = "pnpm --filter @workspace/api-server run dev & pnpm --filter @workspace/clarifin run dev"
-
-<<<<<<< HEAD
-=======
-[[ports]]
-localPort = 3000
-externalPort = 80
-
-
->>>>>>> 7087029250856b72504566da120e674107b7e560
 [[artifacts]]
 id = "artifacts/api-server"
 

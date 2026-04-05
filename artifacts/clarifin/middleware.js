@@ -2,14 +2,9 @@ import { rewrite } from "@vercel/functions";
 
 /**
  * Vercel Edge Middleware — SPA fallback routing.
- *
- * Rewrites all non-API, non-static-asset requests to /index.html so that
- * React Router can handle client-side routing (e.g. /sign-in, /app/dashboard).
- *
- * Runs at the edge BEFORE Vercel's filesystem/Lambda routing, making it
- * the most reliable way to serve a SPA on Vercel LAMBDAS deployments.
+ * Rewrites non-API, non-asset paths to /index.html so React Router handles them.
  */
-export default function middleware(request: Request) {
+export default function middleware(request) {
   const { pathname } = new URL(request.url);
 
   // Pass through API routes

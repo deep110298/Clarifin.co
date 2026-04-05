@@ -1,4 +1,4 @@
 {
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "buildCommand": "pnpm --filter @workspace/clarifin run build && node ../../scripts/generate-html-module.mjs"
+  "buildCommand": "pnpm --filter @workspace/clarifin run build && node ../../scripts/generate-html-module.mjs && node ../../scripts/build-api-lambda.mjs"
 }

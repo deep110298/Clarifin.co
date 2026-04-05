@@ -39,7 +39,7 @@ app.use("/api", router);
 
 // Serve frontend static files (not on Vercel — Vercel serves them directly)
 if (!process.env.VERCEL) {
-  const frontendDist = path.resolve(__dirname, "../../../../dist/public");
+  const frontendDist = path.resolve(__dirname, "../../clarifin/dist/public");
   app.use(express.static(frontendDist));
   app.get("/{*path}", (_req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));

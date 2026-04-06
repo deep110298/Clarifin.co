@@ -57,7 +57,7 @@ function Field({ label, prefix, value, onChange, type = "number", options, place
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-[#0D1B2A] bg-white focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75]"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-[#1A2C20] bg-white focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#4D8F6A]"
         >
           {options?.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
@@ -79,7 +79,7 @@ function Field({ label, prefix, value, onChange, type = "number", options, place
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className={cn(
-            "w-full border border-gray-200 rounded-lg py-2 text-sm text-[#0D1B2A] bg-white focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75]",
+            "w-full border border-gray-200 rounded-lg py-2 text-sm text-[#1A2C20] bg-white focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#4D8F6A]",
             prefix ? "pl-7 pr-3" : "px-3"
           )}
         />
@@ -109,7 +109,7 @@ function JobChangeFields({
       </div>
       {/* Proposed */}
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-[#1D9E75] uppercase tracking-wide">New Scenario</h3>
+        <h3 className="text-xs font-semibold text-[#4D8F6A] uppercase tracking-wide">New Scenario</h3>
         <Field label="New Salary" prefix="$" value={prop.income} onChange={(v) => setProp("income", v)} min={0} />
         <Field label="New City" type="select" options={CITIES} value={prop.city as string} onChange={(v) => setProp("city", v)} />
         <Field label="New Monthly Rent" prefix="$" value={prop.housing} onChange={(v) => setProp("housing", v)} min={0} />
@@ -138,7 +138,7 @@ function BuyHomeFields({
         <Field label="State" type="select" options={US_STATES} value={curr.state as string} onChange={(v) => setCurr("state", v)} />
       </div>
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-[#1D9E75] uppercase tracking-wide">New Scenario (Buying)</h3>
+        <h3 className="text-xs font-semibold text-[#4D8F6A] uppercase tracking-wide">New Scenario (Buying)</h3>
         <Field label="Home Purchase Price" prefix="$" value={prop.homePrice} onChange={(v) => setProp("homePrice", v)} min={0} />
         <Field label="Down Payment" prefix="$" value={prop.downPayment} onChange={(v) => setProp("downPayment", v)} min={0} />
         <Field label="Mortgage Rate (%)" value={prop.mortgageRate} onChange={(v) => setProp("mortgageRate", v)} min={0} />
@@ -285,7 +285,7 @@ export default function ScenarioBuilderPage() {
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-[#0D1B2A]">Scenario Builder</h1>
+          <h1 className="text-2xl font-bold text-[#1A2C20]">Scenario Builder</h1>
           <p className="text-sm text-gray-500 mt-0.5">Model any life decision and see the financial impact instantly.</p>
         </div>
 
@@ -294,7 +294,7 @@ export default function ScenarioBuilderPage() {
           type="text"
           value={scenarioName}
           onChange={(e) => setScenarioName(e.target.value)}
-          className="text-xl font-semibold text-[#0D1B2A] bg-transparent border-b-2 border-gray-200 focus:border-[#1D9E75] focus:outline-none py-1 w-full max-w-md"
+          className="text-xl font-semibold text-[#1A2C20] bg-transparent border-b-2 border-gray-200 focus:border-[#4D8F6A] focus:outline-none py-1 w-full max-w-md"
           placeholder="Name this scenario..."
         />
 
@@ -307,8 +307,8 @@ export default function ScenarioBuilderPage() {
               className={cn(
                 "flex flex-col items-center gap-1.5 p-3 rounded-xl border text-xs font-medium transition-all",
                 scenarioType === id
-                  ? "bg-[#0D1B2A] text-white border-[#0D1B2A]"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-[#1D9E75]/40 hover:bg-[#1D9E75]/5"
+                  ? "bg-[#1A2C20] text-white border-[#0D1B2A]"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-[#4D8F6A]/40 hover:bg-[#4D8F6A]/5"
               )}
               title={desc}
             >
@@ -344,13 +344,13 @@ export default function ScenarioBuilderPage() {
         <div className="grid lg:grid-cols-3 gap-5">
           {/* Comparison table */}
           <div className="lg:col-span-1 bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h2 className="font-semibold text-[#0D1B2A] mb-4 text-sm">Monthly Breakdown</h2>
+            <h2 className="font-semibold text-[#1A2C20] mb-4 text-sm">Monthly Breakdown</h2>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-400 uppercase">
                   <th className="text-left pb-2 font-medium">Item</th>
                   <th className="text-right pb-2 font-medium">Current</th>
-                  <th className="text-right pb-2 font-medium text-[#1D9E75]">New</th>
+                  <th className="text-right pb-2 font-medium text-[#4D8F6A]">New</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -366,7 +366,7 @@ export default function ScenarioBuilderPage() {
                       <td className="py-2 text-right font-medium">{formatCurrency(row.curr)}</td>
                       <td className="py-2 text-right font-medium">
                         {row.prop !== null ? (
-                          <span className={diff !== null && diff > 0 ? "text-[#1D9E75]" : diff !== null && diff < 0 ? "text-red-500" : ""}>
+                          <span className={diff !== null && diff > 0 ? "text-[#4D8F6A]" : diff !== null && diff < 0 ? "text-red-500" : ""}>
                             {formatCurrency(row.prop)}
                           </span>
                         ) : (
@@ -379,8 +379,8 @@ export default function ScenarioBuilderPage() {
               </tbody>
               <tfoot>
                 <tr className="border-t border-gray-200">
-                  <td className="pt-3 text-xs font-semibold text-[#0D1B2A]">Net monthly</td>
-                  <td className="pt-3 text-right font-bold text-[#0D1B2A]">{formatCurrency(analysis.currSurplus)}</td>
+                  <td className="pt-3 text-xs font-semibold text-[#1A2C20]">Net monthly</td>
+                  <td className="pt-3 text-right font-bold text-[#1A2C20]">{formatCurrency(analysis.currSurplus)}</td>
                   <td className="pt-3 text-right font-bold" style={{ color: analysis.propSurplus >= analysis.currSurplus ? "#1D9E75" : "#ef4444" }}>
                     {formatCurrency(analysis.propSurplus)}
                   </td>
@@ -391,7 +391,7 @@ export default function ScenarioBuilderPage() {
             <div className="mt-4 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">Retirement age (current)</span>
-                <span className="font-semibold text-[#0D1B2A]">Age {analysis.retireCurr}</span>
+                <span className="font-semibold text-[#1A2C20]">Age {analysis.retireCurr}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">Retirement age (new)</span>
@@ -404,7 +404,7 @@ export default function ScenarioBuilderPage() {
 
           {/* Projection chart */}
           <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h2 className="font-semibold text-[#0D1B2A] mb-1 text-sm">30-Year Net Worth Projection</h2>
+            <h2 className="font-semibold text-[#1A2C20] mb-1 text-sm">30-Year Net Worth Projection</h2>
             <p className="text-xs text-gray-400 mb-4">7% avg annual return</p>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={analysis.projData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
@@ -436,22 +436,22 @@ export default function ScenarioBuilderPage() {
         <div className={cn(
           "rounded-xl border p-5 flex items-start gap-4",
           analysis.propWins
-            ? "bg-[#1D9E75]/8 border-[#1D9E75]/20"
+            ? "bg-[#4D8F6A]/8 border-[#4D8F6A]/20"
             : "bg-orange-50 border-orange-200"
         )}>
           <div className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-            analysis.propWins ? "bg-[#1D9E75]" : "bg-orange-400"
+            analysis.propWins ? "bg-[#4D8F6A]" : "bg-orange-400"
           )}>
             {analysis.propWins ? <Award className="w-5 h-5 text-white" /> : <AlertCircle className="w-5 h-5 text-white" />}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-[#0D1B2A]">
+              <h3 className="font-semibold text-[#1A2C20]">
                 {analysis.propWins ? "New scenario wins financially" : "Current path is stronger"}
               </h3>
               {analysis.propWins ? (
-                <TrendingUp className="w-4 h-4 text-[#1D9E75]" />
+                <TrendingUp className="w-4 h-4 text-[#4D8F6A]" />
               ) : (
                 <TrendingDown className="w-4 h-4 text-orange-500" />
               )}
@@ -469,13 +469,13 @@ export default function ScenarioBuilderPage() {
         <div className="flex gap-3">
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 bg-[#1D9E75] hover:bg-[#178f68] text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors"
+            className="flex items-center gap-2 bg-[#4D8F6A] hover:bg-[#3D7A5A] text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors"
           >
             Save scenario
             <ArrowRight className="w-4 h-4" />
           </button>
           <a href="/app/advisor">
-            <button className="flex items-center gap-2 bg-[#0D1B2A] hover:bg-[#1a2e40] text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors">
+            <button className="flex items-center gap-2 bg-[#1A2C20] hover:bg-[#1a2e40] text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors">
               Ask AI advisor
             </button>
           </a>

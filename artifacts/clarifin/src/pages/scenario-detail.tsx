@@ -115,8 +115,8 @@ export default function ScenarioDetailPage() {
       <AppLayout>
         <div className="max-w-5xl mx-auto text-center py-20">
           <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h2 className="font-semibold text-[#0D1B2A] mb-2">Scenario not found</h2>
-          <Link href="/app/scenarios"><button className="text-[#1D9E75] text-sm hover:underline">← Back to scenarios</button></Link>
+          <h2 className="font-semibold text-[#1A2C20] mb-2">Scenario not found</h2>
+          <Link href="/app/scenarios"><button className="text-[#4D8F6A] text-sm hover:underline">← Back to scenarios</button></Link>
         </div>
       </AppLayout>
     )
@@ -135,7 +135,7 @@ export default function ScenarioDetailPage() {
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-[#0D1B2A]">{scenario.name}</h1>
+                <h1 className="text-2xl font-bold text-[#1A2C20]">{scenario.name}</h1>
                 <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{TYPE_LABELS[scenario.type] ?? "Scenario"}</span>
               </div>
               <p className="text-sm text-gray-400 mt-0.5">
@@ -156,17 +156,17 @@ export default function ScenarioDetailPage() {
             {/* Verdict card */}
             <div className={cn(
               "rounded-xl border p-5 flex items-start gap-4",
-              analysis.propWins ? "bg-[#1D9E75]/8 border-[#1D9E75]/20" : "bg-orange-50 border-orange-200"
+              analysis.propWins ? "bg-[#4D8F6A]/8 border-[#4D8F6A]/20" : "bg-orange-50 border-orange-200"
             )}>
-              <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0", analysis.propWins ? "bg-[#1D9E75]" : "bg-orange-400")}>
+              <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0", analysis.propWins ? "bg-[#4D8F6A]" : "bg-orange-400")}>
                 {analysis.propWins ? <Award className="w-5 h-5 text-white" /> : <AlertCircle className="w-5 h-5 text-white" />}
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-[#0D1B2A]">
+                  <h3 className="font-semibold text-[#1A2C20]">
                     {analysis.propWins ? "New scenario wins financially" : "Current path is stronger"}
                   </h3>
-                  {analysis.propWins ? <TrendingUp className="w-4 h-4 text-[#1D9E75]" /> : <TrendingDown className="w-4 h-4 text-orange-500" />}
+                  {analysis.propWins ? <TrendingUp className="w-4 h-4 text-[#4D8F6A]" /> : <TrendingDown className="w-4 h-4 text-orange-500" />}
                 </div>
                 <p className="text-sm text-gray-600">
                   {analysis.propWins
@@ -181,13 +181,13 @@ export default function ScenarioDetailPage() {
             <div className="grid lg:grid-cols-5 gap-5">
               {/* Comparison table */}
               <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-                <h2 className="font-semibold text-[#0D1B2A] text-sm mb-4">Monthly Breakdown</h2>
+                <h2 className="font-semibold text-[#1A2C20] text-sm mb-4">Monthly Breakdown</h2>
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-xs text-gray-400 uppercase">
                       <th className="text-left pb-2 font-medium">Item</th>
                       <th className="text-right pb-2 font-medium">Current</th>
-                      <th className="text-right pb-2 font-medium text-[#1D9E75]">New</th>
+                      <th className="text-right pb-2 font-medium text-[#4D8F6A]">New</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -201,7 +201,7 @@ export default function ScenarioDetailPage() {
                         <td className="py-2 text-right font-medium">{formatCurrency(row.curr)}</td>
                         <td className="py-2 text-right font-medium">
                           {row.prop !== null ? (
-                            <span className={row.prop > row.curr ? "text-[#1D9E75]" : row.prop < row.curr ? "text-red-500" : ""}>
+                            <span className={row.prop > row.curr ? "text-[#4D8F6A]" : row.prop < row.curr ? "text-red-500" : ""}>
                               {formatCurrency(row.prop)}
                             </span>
                           ) : <span className="text-gray-400">—</span>}
@@ -211,8 +211,8 @@ export default function ScenarioDetailPage() {
                   </tbody>
                   <tfoot>
                     <tr className="border-t border-gray-200">
-                      <td className="pt-3 text-xs font-semibold text-[#0D1B2A]">Net monthly</td>
-                      <td className="pt-3 text-right font-bold text-[#0D1B2A]">{formatCurrency(analysis.currSurplus)}</td>
+                      <td className="pt-3 text-xs font-semibold text-[#1A2C20]">Net monthly</td>
+                      <td className="pt-3 text-right font-bold text-[#1A2C20]">{formatCurrency(analysis.currSurplus)}</td>
                       <td className="pt-3 text-right font-bold" style={{ color: analysis.propSurplus >= analysis.currSurplus ? "#1D9E75" : "#ef4444" }}>
                         {formatCurrency(analysis.propSurplus)}
                       </td>
@@ -233,7 +233,7 @@ export default function ScenarioDetailPage() {
                         <m.icon className="w-3.5 h-3.5 text-gray-400" />
                         <span className="text-xs text-gray-500">{m.label}</span>
                       </div>
-                      <span className={cn("text-xs font-semibold", m.highlight ? "text-[#1D9E75]" : "text-[#0D1B2A]")}>{m.value}</span>
+                      <span className={cn("text-xs font-semibold", m.highlight ? "text-[#4D8F6A]" : "text-[#1A2C20]")}>{m.value}</span>
                     </div>
                   ))}
                 </div>
@@ -243,14 +243,14 @@ export default function ScenarioDetailPage() {
               <div className="lg:col-span-3 bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="font-semibold text-[#0D1B2A] text-sm">Net Worth Projection</h2>
+                    <h2 className="font-semibold text-[#1A2C20] text-sm">Net Worth Projection</h2>
                     <p className="text-xs text-gray-400">7% avg annual return</p>
                   </div>
                   <div className="flex gap-1">
                     {([10, 20, 30] as const).map(y => (
                       <button key={y} onClick={() => setProjYears(y)} className={cn(
                         "px-2.5 py-1 text-xs rounded-md font-medium transition-colors",
-                        projYears === y ? "bg-[#0D1B2A] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        projYears === y ? "bg-[#1A2C20] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                       )}>{y}yr</button>
                     ))}
                   </div>
@@ -283,12 +283,12 @@ export default function ScenarioDetailPage() {
             {/* Bottom actions */}
             <div className="flex gap-3">
               <Link href="/app/scenarios/new">
-                <button className="flex items-center gap-2 border border-gray-200 hover:border-[#1D9E75]/40 text-gray-600 hover:text-[#1D9E75] px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
+                <button className="flex items-center gap-2 border border-gray-200 hover:border-[#4D8F6A]/40 text-gray-600 hover:text-[#4D8F6A] px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
                   <DollarSign className="w-4 h-4" /> New scenario
                 </button>
               </Link>
               <Link href="/app/advisor">
-                <button className="flex items-center gap-2 bg-[#0D1B2A] hover:bg-[#1a2e40] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
+                <button className="flex items-center gap-2 bg-[#1A2C20] hover:bg-[#1a2e40] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
                   Ask AI advisor
                 </button>
               </Link>

@@ -1,6 +1,6 @@
 import { ArrowRight, Compass, Shield, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoImg from "@/assets/logo.jpg";
+import logoImg from "@/assets/logo.png";
 
 export default function LandingPage() {
   return (

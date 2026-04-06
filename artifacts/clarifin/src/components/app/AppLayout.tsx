@@ -3,7 +3,7 @@ import {
   LayoutDashboard, GitCompare, MessageSquare, User,
   LogOut,
 } from "lucide-react";
-import logoImg from "@/assets/logo.jpg";
+import logoImg from "@/assets/logo.png";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
 

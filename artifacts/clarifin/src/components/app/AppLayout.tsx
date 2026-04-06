@@ -3,6 +3,7 @@ import {
   LayoutDashboard, GitCompare, MessageSquare, User,
   LogOut,
 } from "lucide-react";
+import logoImg from "@/assets/logo.jpg";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +28,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="px-6 py-7 border-b border-white/10">
           <Link href="/">
-            <div className="text-lg font-medium tracking-tight cursor-pointer">Clarifin.</div>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <img src={logoImg} alt="Clarifin" className="w-8 h-8 object-contain invert" />
+              <span className="text-lg font-semibold tracking-tight">Clarifin</span>
+            </div>
           </Link>
         </div>
 
@@ -86,7 +90,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="bg-[#0F172A] text-white px-6 py-4 flex items-center justify-between shrink-0 border-b border-white/10">
           {/* Mobile logo */}
           <Link href="/">
-            <div className="lg:hidden text-base font-medium tracking-tight cursor-pointer">Clarifin.</div>
+            <div className="lg:hidden flex items-center gap-2 cursor-pointer">
+              <img src={logoImg} alt="Clarifin" className="w-7 h-7 object-contain invert" />
+              <span className="font-semibold">Clarifin</span>
+            </div>
           </Link>
           {/* Page label — desktop */}
           <div className="hidden lg:block text-xs uppercase tracking-widest text-white/30 font-medium">

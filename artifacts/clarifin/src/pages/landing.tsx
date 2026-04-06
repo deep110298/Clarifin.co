@@ -1,12 +1,16 @@
 import { ArrowRight, Compass, Shield, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoImg from "@/assets/logo.jpg";
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#0F172A] font-sans selection:bg-[#94A3B8] selection:text-white">
       {/* Navigation */}
       <nav className="flex items-center justify-between px-6 py-8 md:px-12 lg:px-24">
-        <div className="text-xl font-medium tracking-tight">Clarifin.</div>
+        <div className="flex items-center gap-2">
+          <img src={logoImg} alt="Clarifin" className="w-8 h-8 object-contain" />
+          <span className="text-xl font-medium tracking-tight">Clarifin.</span>
+        </div>
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#475569]">
           <a href="#features" className="hover:text-[#0F172A] transition-colors">Features</a>
           <a href="#use-cases" className="hover:text-[#0F172A] transition-colors">Use Cases</a>
@@ -221,7 +225,10 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="px-6 py-12 md:px-12 lg:px-24 border-t border-gray-200">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="text-xl font-medium tracking-tight">Clarifin.</div>
+          <div className="flex items-center gap-2">
+            <img src={logoImg} alt="Clarifin" className="w-7 h-7 object-contain" />
+            <span className="text-xl font-medium tracking-tight">Clarifin.</span>
+          </div>
           <div className="flex gap-8 text-sm text-[#64748B]">
             <a href="#" className="hover:text-[#0F172A] transition-colors">Privacy</a>
             <a href="#" className="hover:text-[#0F172A] transition-colors">Terms</a>

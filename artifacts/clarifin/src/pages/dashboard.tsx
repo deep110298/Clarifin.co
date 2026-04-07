@@ -2,11 +2,12 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend,
+  Tooltip, ResponsiveContainer,
 } from "recharts";
 import {
   TrendingUp, TrendingDown, DollarSign, PiggyBank,
-  ArrowRight, Plus, Sparkles,
+  ArrowUpRight, ArrowDownRight, Plus, Search, SlidersHorizontal,
+  Sparkles, Briefcase, Home, GraduationCap, Baby, Plane, Sliders,
 } from "lucide-react";
 import { AppLayout } from "@/components/app/AppLayout";
 import { useStore } from "@/lib/store";
@@ -19,13 +20,21 @@ import { cn } from "@/lib/utils";
 
 const PROJECTION_YEARS = [10, 20, 30] as const;
 
-const SCENARIO_TYPE_LABELS: Record<string, string> = {
-  "job-change": "Job Change",
-  "buy-home": "Buy Home",
-  "school": "Go Back to School",
-  "child": "New Child",
-  "time-off": "Time Off",
-  "custom": "Custom",
+const SCENARIO_COLORS = [
+  "bg-[#FFF3CD] text-[#B45309]",
+  "bg-[#DBEAFE] text-[#1D4ED8]",
+  "bg-[#DCFCE7] text-[#15803D]",
+  "bg-[#FCE7F3] text-[#BE185D]",
+  "bg-[#EDE9FE] text-[#6D28D9]",
+];
+
+const TYPE_ICONS: Record<string, React.ElementType> = {
+  "job-change": Briefcase,
+  "buy-home": Home,
+  "school": GraduationCap,
+  "child": Baby,
+  "time-off": Plane,
+  "custom": Sliders,
 };
 
 export default function DashboardPage() {
@@ -38,13 +47,7 @@ export default function DashboardPage() {
   );
 
   const totalMonthlyExpenses = useMemo(
-    () =>
-      profile.housing +
-      profile.transport +
-      profile.food +
-      profile.utilities +
-      profile.healthcare +
-      profile.otherExpenses,
+    () => profile.housing + profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses,
     [profile]
   );
 
@@ -55,84 +58,94 @@ export default function DashboardPage() {
 
   const projData = useMemo(() => {
     const current = projectNetWorth(netWorth, monthlySurplus, projYears);
-    const optimistic = projectNetWorth(netWorth, monthlySurplus * 1.4, projYears, 0.07);
-    return current.map((pt, i) => ({
+    return current.map((pt) => ({
       year: `Year ${pt.year}`,
-      "Current": pt.netWorth,
-      "Optimized": optimistic[i].netWorth,
+      value: pt.netWorth,
     }));
   }, [netWorth, monthlySurplus, projYears]);
 
-  const metrics = [
+  const quickCards = [
     {
       label: "Net Worth",
       value: formatCurrency(netWorth),
-      sub: netWorth >= 0 ? "positive equity" : "net liability",
+      sub: netWorth >= 0 ? "Positive equity" : "Net liability",
       icon: DollarSign,
-      positive: true,
-      arrowUp: netWorth >= 0,
+      bg: "bg-[#FFF9E6]",
+      iconColor: "text-[#F59E0B]",
+      up: netWorth >= 0,
     },
     {
       label: "Monthly Take-Home",
       value: formatCurrency(monthlyTakeHome),
       sub: `${formatCurrency(profile.grossIncome)} / yr`,
       icon: TrendingUp,
-      positive: true,
-      arrowUp: true,
+      bg: "bg-[#EFF6FF]",
+      iconColor: "text-[#3B82F6]",
+      up: true,
     },
     {
       label: "Monthly Surplus",
       value: formatCurrency(monthlySurplus),
       sub: `${savingsRate.toFixed(0)}% savings rate`,
       icon: PiggyBank,
-      positive: true,
-      arrowUp: monthlySurplus >= 0,
+      bg: "bg-[#F0FDF4]",
+      iconColor: "text-[#22C55E]",
+      up: monthlySurplus >= 0,
     },
     {
       label: "Total Debt",
       value: formatCurrency(totalDebt),
-      sub: "across all accounts",
+      sub: "Across all accounts",
       icon: TrendingDown,
-      positive: false,
-      arrowUp: false,
+      bg: "bg-[#FFF1F2]",
+      iconColor: "text-[#F43F5E]",
+      up: false,
     },
   ];
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto space-y-5">
+      <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Metric cards */}
+        {/* Action bar */}
+        <div className="flex items-center gap-3">
+          <Link href="/app/scenarios/new">
+            <button className="flex items-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-[#1A1A2E] text-sm font-medium px-4 py-2.5 rounded-xl transition-colors shadow-sm">
+              <Plus className="w-4 h-4" /> Add new
+            </button>
+          </Link>
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-[#9CA3AF] shadow-sm flex-1 max-w-xs">
+            <Search className="w-4 h-4 shrink-0" />
+            <span>Search scenarios...</span>
+          </div>
+          <button className="w-10 h-10 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+            <SlidersHorizontal className="w-4 h-4 text-[#9CA3AF]" />
+          </button>
+        </div>
+
+        {/* Quick cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {metrics.map((m) => (
-            <div key={m.label} className="bg-white rounded-2xl p-5 shadow-sm">
-              <div className="flex items-start justify-between mb-3">
-                <div className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center",
-                  m.positive ? "bg-[#E8F5EE]" : "bg-[#FFF3ED]"
-                )}>
-                  <m.icon className={cn(m.positive ? "text-[#4D8F6A]" : "text-[#E07B4A]")} strokeWidth={1.5} style={{ width: 18, height: 18 }} />
-                </div>
-                <ArrowRight
-                  className={cn("w-4 h-4 -rotate-45", m.arrowUp ? "text-[#4D8F6A]" : "text-[#E07B4A]")}
-                  strokeWidth={2}
-                />
+          {quickCards.map((c) => (
+            <div key={c.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col items-center text-center gap-2">
+              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-1", c.bg)}>
+                <c.icon className={cn("w-6 h-6", c.iconColor)} strokeWidth={1.8} />
               </div>
-              <div className="text-2xl font-bold text-[#1A2C20] tracking-tight">{m.value}</div>
-              <div className="text-xs text-[#9BAA9E] mt-1">{m.label}</div>
-              <div className="text-xs text-[#6B7A72] mt-0.5 font-medium">{m.sub}</div>
+              <div className="text-lg font-bold text-[#1A1A2E]">{c.value}</div>
+              <div className="text-xs font-semibold text-[#6B7280]">{c.label}</div>
+              <div className="text-[11px] text-[#9CA3AF]">{c.sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Chart + Scenarios row */}
+        {/* Main content row */}
         <div className="grid lg:grid-cols-3 gap-5">
-          {/* Projection chart */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-1">
+
+          {/* Expenditure chart */}
+          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="font-bold text-[#1A2C20]">Net Worth Projection</h2>
-                <p className="text-xs text-[#9BAA9E] mt-0.5">7% avg annual return assumed</p>
+                <h2 className="font-bold text-[#1A1A2E]">Net Worth Projection</h2>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">7% avg annual return assumed</p>
               </div>
               <div className="flex gap-1.5">
                 {PROJECTION_YEARS.map((y) => (
@@ -140,10 +153,8 @@ export default function DashboardPage() {
                     key={y}
                     onClick={() => setProjYears(y)}
                     className={cn(
-                      "px-3 py-1 text-xs font-medium rounded-full transition-colors",
-                      projYears === y
-                        ? "bg-[#4D8F6A] text-white"
-                        : "bg-[#F4FAF6] text-[#9BAA9E] hover:text-[#4D8F6A]"
+                      "px-3 py-1 text-xs font-semibold rounded-lg transition-colors",
+                      projYears === y ? "bg-[#FACC15] text-[#1A1A2E]" : "bg-gray-100 text-[#9CA3AF] hover:bg-gray-200"
                     )}
                   >
                     {y}yr
@@ -151,117 +162,152 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={projData} margin={{ top: 12, right: 8, bottom: 0, left: 0 }}>
+
+            {/* Big number */}
+            <div className="mb-4">
+              <div className="text-3xl font-bold text-[#1A1A2E]">{formatCurrency(netWorth)}</div>
+              <div className={cn("flex items-center gap-1 text-sm font-medium mt-1", netWorth >= 0 ? "text-[#22C55E]" : "text-[#F43F5E]")}>
+                {netWorth >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                {netWorth >= 0 ? "Positive net worth" : "Net liability"}
+              </div>
+            </div>
+
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={projData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                 <defs>
-                  <linearGradient id="gradCurrent" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4D8F6A" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#4D8F6A" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradOptimized" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4D8F6A" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#4D8F6A" stopOpacity={0} />
+                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#FACC15" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#FACC15" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F7F2" vertical={false} />
-                <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#9BAA9E" }} axisLine={false} tickLine={false} interval={Math.floor(projData.length / 5)} />
-                <YAxis tick={{ fontSize: 11, fill: "#9BAA9E" }} axisLine={false} tickLine={false} tickFormatter={(v) => {
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                <XAxis dataKey="year" tick={{ fontSize: 10, fill: "#9CA3AF" }} axisLine={false} tickLine={false} interval={Math.floor(projData.length / 4)} />
+                <YAxis tick={{ fontSize: 10, fill: "#9CA3AF" }} axisLine={false} tickLine={false} tickFormatter={(v) => {
                   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
                   if (v >= 1_000) return `$${(v / 1_000).toFixed(0)}k`;
                   return `$${v}`;
                 }} />
-                <Tooltip contentStyle={{ fontSize: 12, border: "1px solid #E8F5EE", borderRadius: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", color: "#1A2C20" }} formatter={(v: number) => formatCurrency(v)} />
-                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 16, color: "#9BAA9E" }} />
-                <Area type="monotone" dataKey="Current" stroke="#4D8F6A" strokeWidth={2} fill="url(#gradCurrent)" />
-                <Area type="monotone" dataKey="Optimized" stroke="#4D8F6A" strokeWidth={2} fill="url(#gradOptimized)" strokeDasharray="5 3" />
+                <Tooltip contentStyle={{ fontSize: 12, border: "1px solid #F3F4F6", borderRadius: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} formatter={(v: number) => [formatCurrency(v), "Net Worth"]} />
+                <Area type="monotone" dataKey="value" stroke="#FACC15" strokeWidth={3} fill="url(#grad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
+
+            <div className="mt-3 flex items-center justify-between text-xs text-[#9CA3AF]">
+              <span className="font-semibold text-[#1A1A2E]">{formatCurrency(monthlySurplus)}/mo surplus</span>
+              <span>saving {savingsRate.toFixed(0)}% of income</span>
+            </div>
           </div>
 
-          {/* Scenarios panel */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-[#1A2C20]">Scenarios</h2>
-              <Link href="/app/scenarios">
-                <button className="text-xs text-[#4D8F6A] hover:underline font-medium flex items-center gap-1">
-                  View all <ArrowRight className="w-3 h-3" />
-                </button>
-              </Link>
-            </div>
-
-            <div className="space-y-0 flex-1">
-              {scenarios.slice(0, 4).map((s) => (
-                <Link key={s.id} href={`/app/scenarios/${s.id}`}>
-                  <div className="group flex items-center justify-between py-3 border-b border-gray-50 cursor-pointer">
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-[#1A2C20] truncate">{s.name}</div>
-                      <div className="text-xs text-[#9BAA9E]">{SCENARIO_TYPE_LABELS[s.type]}</div>
+          {/* Scenarios list (investments style) */}
+          <div className="flex flex-col gap-4">
+            {/* Scenarios */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-[#1A1A2E]">Scenarios</h2>
+                <Link href="/app/scenarios">
+                  <button className="text-xs text-[#FACC15] font-bold hover:underline flex items-center gap-1">
+                    View all <ArrowUpRight className="w-3 h-3" />
+                  </button>
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {scenarios.length === 0 ? (
+                  <div className="text-center py-6">
+                    <p className="text-sm text-[#9CA3AF] mb-3">No scenarios yet</p>
+                    <Link href="/app/scenarios/new">
+                      <button className="bg-[#FACC15] text-[#1A1A2E] text-xs font-bold px-4 py-2 rounded-xl">
+                        + Create first
+                      </button>
+                    </Link>
+                  </div>
+                ) : (
+                  scenarios.slice(0, 4).map((s, i) => {
+                    const Icon = TYPE_ICONS[s.type] ?? Sliders;
+                    const colorClass = SCENARIO_COLORS[i % SCENARIO_COLORS.length];
+                    return (
+                      <Link key={s.id} href={`/app/scenarios/${s.id}`}>
+                        <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0", colorClass)}>
+                            <Icon style={{ width: 16, height: 16 }} strokeWidth={2} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-[#1A1A2E] truncate">{s.name}</div>
+                            <div className="text-xs text-[#9CA3AF]">{s.type.replace("-", " ")}</div>
+                          </div>
+                          <ArrowUpRight className="w-4 h-4 text-[#D1D5DB] shrink-0" />
+                        </div>
+                      </Link>
+                    );
+                  })
+                )}
+                <Link href="/app/scenarios/new">
+                  <div className="flex items-center gap-3 p-2.5 rounded-xl border border-dashed border-gray-200 hover:border-[#FACC15] cursor-pointer transition-colors mt-1">
+                    <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center">
+                      <Plus className="w-4 h-4 text-[#9CA3AF]" />
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#9BAA9E] group-hover:text-[#4D8F6A] shrink-0 ml-2 transition-colors" />
+                    <span className="text-sm text-[#9CA3AF] font-medium">New scenario</span>
                   </div>
                 </Link>
-              ))}
-              <Link href="/app/scenarios/new">
-                <div className="flex items-center gap-2 py-3 cursor-pointer text-[#9BAA9E] hover:text-[#4D8F6A] transition-colors border border-dashed border-[#D4EAD9] rounded-xl px-3 mt-2">
-                  <Plus className="w-3.5 h-3.5" />
-                  <span className="text-sm">New scenario</span>
+              </div>
+            </div>
+
+            {/* Dark balance card */}
+            <div className="bg-[#1A1A2E] rounded-2xl p-5 text-white shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-white/50 font-medium uppercase tracking-widest">Total Balance</p>
+                <button className="w-7 h-7 bg-white/10 rounded-full flex items-center justify-center">
+                  <ArrowUpRight className="w-3.5 h-3.5 text-white/60" />
+                </button>
+              </div>
+              <div className="text-2xl font-bold mb-4">{formatCurrency(netWorth)}</div>
+              <div className="flex gap-2 mb-4">
+                {[
+                  { label: "Income", value: formatCurrency(monthlyTakeHome), up: true },
+                  { label: "Expenses", value: formatCurrency(totalMonthlyExpenses), up: false },
+                ].map((item) => (
+                  <div key={item.label} className="flex-1 bg-white/10 rounded-xl p-3">
+                    <div className={cn("text-xs font-medium mb-1", item.up ? "text-[#FACC15]" : "text-[#F87171]")}>{item.label}</div>
+                    <div className="text-sm font-bold text-white">{item.value}</div>
+                  </div>
+                ))}
+              </div>
+              <Link href="/app/advisor">
+                <div className="flex items-center gap-2 bg-[#FACC15] rounded-xl p-3 cursor-pointer hover:bg-yellow-300 transition-colors">
+                  <Sparkles className="w-4 h-4 text-[#1A1A2E]" strokeWidth={2} />
+                  <div>
+                    <p className="text-xs font-bold text-[#1A1A2E]">AI Advisor</p>
+                    <p className="text-[10px] text-[#1A1A2E]/70">Ask anything about your finances</p>
+                  </div>
                 </div>
               </Link>
             </div>
-
-            <Link href="/app/advisor">
-              <div className="mt-4 p-4 bg-[#4D8F6A] rounded-xl text-white cursor-pointer hover:bg-[#3D7A5A] transition-colors">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-4 h-4" strokeWidth={1.5} />
-                  <span className="text-sm font-semibold">AI Advisor</span>
-                </div>
-                <p className="text-sm text-white/80">Ask anything about your finances →</p>
-              </div>
-            </Link>
           </div>
         </div>
 
-        {/* Monthly Budget Breakdown */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="font-bold text-[#1A2C20] mb-5">Monthly Budget Breakdown</h2>
+        {/* Budget breakdown */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h2 className="font-bold text-[#1A1A2E] mb-5">Monthly Budget Breakdown</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
-              { label: "Housing", value: profile.housing },
-              { label: "Transport", value: profile.transport },
-              { label: "Food", value: profile.food },
-              { label: "Utilities", value: profile.utilities },
-              { label: "Healthcare", value: profile.healthcare },
-              { label: "Other", value: profile.otherExpenses },
+              { label: "Housing", value: profile.housing, color: "bg-[#FFF9E6]", bar: "bg-[#F59E0B]" },
+              { label: "Transport", value: profile.transport, color: "bg-[#EFF6FF]", bar: "bg-[#3B82F6]" },
+              { label: "Food", value: profile.food, color: "bg-[#F0FDF4]", bar: "bg-[#22C55E]" },
+              { label: "Utilities", value: profile.utilities, color: "bg-[#FFF1F2]", bar: "bg-[#F43F5E]" },
+              { label: "Healthcare", value: profile.healthcare, color: "bg-[#F5F3FF]", bar: "bg-[#8B5CF6]" },
+              { label: "Other", value: profile.otherExpenses, color: "bg-[#F0FDFA]", bar: "bg-[#14B8A6]" },
             ].map((item) => {
               const pct = monthlyTakeHome > 0 ? (item.value / monthlyTakeHome) * 100 : 0;
               return (
-                <div key={item.label} className="bg-[#F8FCF9] rounded-xl p-4">
-                  <div className="text-[10px] uppercase tracking-widest text-[#9BAA9E] font-medium mb-2">{item.label}</div>
-                  <div className="text-xl font-bold text-[#1A2C20] tracking-tight mb-3">{formatCurrency(item.value)}</div>
-                  <div className="h-1.5 bg-[#E8F5EE] rounded-full overflow-hidden">
-                    <div className="h-full bg-[#4D8F6A] rounded-full transition-all" style={{ width: `${Math.min(100, pct)}%` }} />
+                <div key={item.label} className={cn("rounded-2xl p-4", item.color)}>
+                  <div className="text-[10px] uppercase tracking-widest text-[#9CA3AF] font-semibold mb-2">{item.label}</div>
+                  <div className="text-xl font-bold text-[#1A1A2E] mb-3">{formatCurrency(item.value)}</div>
+                  <div className="h-1.5 bg-black/10 rounded-full overflow-hidden">
+                    <div className={cn("h-full rounded-full", item.bar)} style={{ width: `${Math.min(100, pct)}%` }} />
                   </div>
-                  <div className="text-xs text-[#9BAA9E] mt-2">{pct.toFixed(0)}% of income</div>
+                  <div className="text-xs text-[#9CA3AF] mt-2">{pct.toFixed(0)}% of income</div>
                 </div>
               );
             })}
-          </div>
-
-          <div className="mt-5 pt-4 border-t border-gray-100 grid grid-cols-3 gap-4">
-            <div className="bg-[#F8FCF9] rounded-xl p-4">
-              <div className="text-xs text-[#9BAA9E] mb-1">Total Expenses</div>
-              <div className="text-xl font-bold text-[#1A2C20]">{formatCurrency(totalMonthlyExpenses)}</div>
-            </div>
-            <div className="bg-[#F8FCF9] rounded-xl p-4">
-              <div className="text-xs text-[#9BAA9E] mb-1">Take-Home</div>
-              <div className="text-xl font-bold text-[#1A2C20]">{formatCurrency(monthlyTakeHome)}</div>
-            </div>
-            <div className="bg-[#E8F5EE] rounded-xl p-4">
-              <div className="text-xs text-[#4D8F6A] font-medium mb-1">Monthly Surplus</div>
-              <div className={cn("text-xl font-bold", monthlySurplus >= 0 ? "text-[#4D8F6A]" : "text-[#E07B4A]")}>
-                {formatCurrency(monthlySurplus)}
-              </div>
-            </div>
           </div>
         </div>
 

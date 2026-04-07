@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, GitCompare, MessageSquare, User,
-  LogOut,
+  LogOut, Settings, Zap,
 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { useUser, useClerk } from "@clerk/clerk-react";
@@ -26,57 +26,74 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pageLabel = NAV.find((n) => location === n.href || location.startsWith(n.href + "/"))?.label ?? "";
 
   return (
-    <div className="flex min-h-screen bg-[#EEF4EF]">
+    <div className="flex min-h-screen bg-[#F8F9FC]">
       {/* Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-100 shrink-0">
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-gray-100">
+        <div className="px-6 py-6">
           <Link href="/">
             <div className="flex items-center gap-2.5 cursor-pointer">
-              <img src={logoImg} alt="Clarifin" className="w-8 h-8 object-contain" />
-              <span className="text-lg font-semibold text-[#1A2C20] tracking-tight">Clarifin</span>
+              <div className="w-8 h-8 rounded-lg bg-[#FACC15] flex items-center justify-center">
+                <img src={logoImg} alt="Clarifin" className="w-5 h-5 object-contain" />
+              </div>
+              <span className="text-lg font-bold text-[#1A1A2E] tracking-tight">Clarifin</span>
             </div>
           </Link>
         </div>
 
-        {/* User profile */}
-        <div className="px-6 py-5 border-b border-gray-100 flex flex-col items-center text-center">
-          <div className="w-12 h-12 rounded-full bg-[#E8F5EE] flex items-center justify-center text-[#4D8F6A] font-semibold text-sm mb-2">
-            {initials}
-          </div>
-          <div className="text-sm font-semibold text-[#1A2C20]">{displayName}</div>
-          <div className="text-xs text-[#9BAA9E] mt-0.5">Member</div>
-        </div>
-
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
+        <nav className="flex-1 px-3 py-2 space-y-1">
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = location === href || location.startsWith(href + "/");
             return (
               <Link key={href} href={href}>
                 <div
                   className={cn(
-                    "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-colors",
+                    "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all",
                     active
-                      ? "bg-[#E8F5EE] text-[#4D8F6A]"
-                      : "text-[#6B7A72] hover:bg-[#F4FAF6] hover:text-[#1A2C20]"
+                      ? "bg-[#FACC15] text-[#1A1A2E] shadow-sm"
+                      : "text-[#9CA3AF] hover:bg-gray-50 hover:text-[#1A1A2E]"
                   )}
                 >
-                  <Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                  <Icon className="w-4.5 h-4.5 shrink-0" strokeWidth={active ? 2.5 : 1.8} style={{ width: 18, height: 18 }} />
                   <span>{label}</span>
                 </div>
               </Link>
             );
           })}
+          <Link href="/app/profile">
+            <div className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all mt-4",
+              "text-[#9CA3AF] hover:bg-gray-50 hover:text-[#1A1A2E]"
+            )}>
+              <Settings style={{ width: 18, height: 18 }} strokeWidth={1.8} />
+              <span>Settings</span>
+            </div>
+          </Link>
         </nav>
 
+        {/* Upgrade CTA */}
+        <div className="mx-4 mb-4 rounded-2xl bg-[#1A1A2E] p-4 text-white">
+          <div className="w-8 h-8 rounded-lg bg-[#FACC15] flex items-center justify-center mb-3">
+            <Zap className="w-4 h-4 text-[#1A1A2E]" strokeWidth={2.5} />
+          </div>
+          <p className="text-xs text-white/60 mb-1">Want unlimited scenarios?</p>
+          <p className="text-sm font-semibold mb-3">Upgrade to Plus</p>
+          <button
+            onClick={() => window.location.href = "/app/profile"}
+            className="w-full bg-[#FACC15] text-[#1A1A2E] text-xs font-bold py-2 rounded-lg hover:bg-yellow-300 transition-colors"
+          >
+            Upgrade to Pro
+          </button>
+        </div>
+
         {/* Sign out */}
-        <div className="p-4 border-t border-gray-100">
+        <div className="px-4 pb-4">
           <button
             onClick={() => signOut({ redirectUrl: "/" })}
-            className="flex items-center gap-2 px-4 py-2 w-full text-sm text-[#9BAA9E] hover:text-[#6B7A72] transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 w-full text-sm text-[#9CA3AF] hover:text-[#1A1A2E] hover:bg-gray-50 rounded-xl transition-colors"
           >
-            <LogOut className="w-4 h-4" strokeWidth={1.5} />
+            <LogOut style={{ width: 16, height: 16 }} strokeWidth={1.8} />
             Sign out
           </button>
         </div>
@@ -89,22 +106,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Mobile logo */}
           <Link href="/">
             <div className="lg:hidden flex items-center gap-2 cursor-pointer">
-              <img src={logoImg} alt="Clarifin" className="w-7 h-7 object-contain" />
-              <span className="font-semibold text-[#1A2C20]">Clarifin</span>
+              <div className="w-7 h-7 rounded-lg bg-[#FACC15] flex items-center justify-center">
+                <img src={logoImg} alt="Clarifin" className="w-4 h-4 object-contain" />
+              </div>
+              <span className="font-bold text-[#1A1A2E]">Clarifin</span>
             </div>
           </Link>
-          {/* Page title — desktop */}
-          <div className="hidden lg:block text-base font-semibold text-[#1A2C20]">
-            {pageLabel}
+          {/* Welcome — desktop */}
+          <div className="hidden lg:block">
+            <p className="text-xs text-[#9CA3AF] font-medium">Welcome Back!</p>
+            <p className="text-base font-bold text-[#1A1A2E]">{displayName}</p>
           </div>
           {/* Actions */}
           <div className="flex items-center gap-3">
             <Link href="/app/scenarios/new">
-              <button className="flex items-center gap-1.5 bg-[#4D8F6A] hover:bg-[#3D7A5A] text-white text-sm font-medium px-4 py-2 rounded-full transition-colors">
-                + New Scenario
+              <button className="hidden sm:flex items-center gap-1.5 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] text-sm font-bold px-4 py-2 rounded-xl transition-colors">
+                + Add new
               </button>
             </Link>
-            <div className="w-8 h-8 rounded-full bg-[#E8F5EE] flex items-center justify-center text-[#4D8F6A] text-xs font-semibold">
+            <div className="w-9 h-9 rounded-full bg-[#FACC15] flex items-center justify-center text-[#1A1A2E] text-sm font-bold">
               {initials}
             </div>
           </div>
@@ -116,15 +136,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             const active = location === href || location.startsWith(href + "/");
             return (
               <Link key={href} href={href}>
-                <div
-                  className={cn(
-                    "flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium cursor-pointer border-b-2 transition-colors",
-                    active
-                      ? "border-[#4D8F6A] text-[#4D8F6A]"
-                      : "border-transparent text-[#9BAA9E] hover:text-[#6B7A72]"
-                  )}
-                >
-                  <Icon className="w-4 h-4" strokeWidth={1.5} />
+                <div className={cn(
+                  "flex flex-col items-center gap-1 px-3 py-3 text-xs font-medium cursor-pointer border-b-2 transition-colors",
+                  active ? "border-[#FACC15] text-[#1A1A2E]" : "border-transparent text-[#9CA3AF]"
+                )}>
+                  <Icon style={{ width: 16, height: 16 }} strokeWidth={1.8} />
                   {label}
                 </div>
               </Link>

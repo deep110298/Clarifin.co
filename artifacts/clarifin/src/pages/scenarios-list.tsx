@@ -60,12 +60,12 @@ export default function ScenariosListPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#1A2C20]">Your Scenarios</h1>
+            <h1 className="text-2xl font-bold text-[#1A1A2E]">Your Scenarios</h1>
             <p className="text-sm text-gray-500 mt-0.5">Model any life decision and compare paths side by side.</p>
           </div>
           {!atLimit && (
             <Link href="/app/scenarios/new">
-              <button className="flex items-center gap-2 bg-[#4D8F6A] hover:bg-[#3D7A5A] text-white px-4 py-2 rounded-2xl text-sm font-medium transition-colors">
+              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-[#yellow-300] text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-bold transition-colors">
                 <Plus className="w-4 h-4" /> New scenario
               </button>
             </Link>
@@ -105,12 +105,12 @@ export default function ScenariosListPage() {
             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
               <GitCompare className="w-8 h-8 text-gray-300" />
             </div>
-            <h3 className="font-semibold text-[#1A2C20] mb-2">No scenarios yet</h3>
+            <h3 className="font-semibold text-[#1A1A2E] mb-2">No scenarios yet</h3>
             <p className="text-sm text-gray-400 max-w-xs mb-6">
               Create your first scenario to see how a life decision affects your finances over 30 years.
             </p>
             <Link href="/app/scenarios/new">
-              <button className="flex items-center gap-2 bg-[#4D8F6A] hover:bg-[#3D7A5A] text-white px-5 py-2.5 rounded-2xl font-medium text-sm transition-colors">
+              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-[#yellow-300] text-[#1A1A2E] px-5 py-2.5 rounded-2xl font-bold text-sm transition-colors">
                 <Plus className="w-4 h-4" /> Create first scenario
               </button>
             </Link>
@@ -124,7 +124,7 @@ export default function ScenariosListPage() {
               const meta = TYPE_META[s.type] ?? TYPE_META.custom
               const Icon = meta.icon
               return (
-                <div key={s.id} className="group bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:border-[#4D8F6A]/30 hover:shadow-md transition-all flex flex-col">
+                <div key={s.id} className="group bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:border-[#FACC15]/30 hover:shadow-md transition-all flex flex-col">
                   <div className="flex items-start justify-between mb-3">
                     <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full", meta.color)}>
                       <Icon className="w-3.5 h-3.5" />
@@ -137,11 +137,11 @@ export default function ScenariosListPage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <h3 className="font-semibold text-[#1A2C20] mb-1 line-clamp-2">{s.name}</h3>
+                  <h3 className="font-semibold text-[#1A1A2E] mb-1 line-clamp-2">{s.name}</h3>
                   <p className="text-xs text-gray-400 mb-4">{formatDate(s.createdAt)}</p>
                   <div className="mt-auto">
                     <Link href={`/app/scenarios/${s.id}`}>
-                      <button className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#4D8F6A] hover:text-[#4D8F6A] text-gray-600 py-2 rounded-xl text-sm font-medium transition-colors">
+                      <button className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#FACC15] hover:text-[#FACC15] text-gray-600 py-2 rounded-xl text-sm font-medium transition-colors">
                         View analysis <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </Link>
@@ -153,9 +153,9 @@ export default function ScenariosListPage() {
             {/* Add new card */}
             {!atLimit && (
               <Link href="/app/scenarios/new">
-                <div className="flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#4D8F6A]/40 hover:bg-[#4D8F6A]/5 p-5 h-full min-h-36 cursor-pointer transition-all group">
-                  <Plus className="w-8 h-8 text-gray-300 group-hover:text-[#4D8F6A] transition-colors" />
-                  <span className="text-sm text-gray-400 group-hover:text-[#4D8F6A] font-medium transition-colors">New scenario</span>
+                <div className="flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#FACC15]/40 hover:bg-[#FACC15]/5 p-5 h-full min-h-36 cursor-pointer transition-all group">
+                  <Plus className="w-8 h-8 text-gray-300 group-hover:text-[#FACC15] transition-colors" />
+                  <span className="text-sm text-gray-400 group-hover:text-[#FACC15] font-medium transition-colors">New scenario</span>
                 </div>
               </Link>
             )}
@@ -164,10 +164,10 @@ export default function ScenariosListPage() {
 
         {/* Advisor nudge */}
         {scenarios.length > 0 && (
-          <div className="bg-[#1A2C20] rounded-2xl p-5 flex items-center justify-between">
+          <div className="bg-[#1A1A2E] rounded-2xl p-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#4D8F6A]/20 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-[#4D8F6A]" />
+              <div className="w-9 h-9 rounded-xl bg-[#FACC15]/20 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-[#FACC15]" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">Want a second opinion?</p>
@@ -175,7 +175,7 @@ export default function ScenariosListPage() {
               </div>
             </div>
             <Link href="/app/advisor">
-              <button className="shrink-0 text-sm bg-[#4D8F6A] hover:bg-[#3D7A5A] text-white px-4 py-2 rounded-xl font-medium transition-colors">
+              <button className="shrink-0 text-sm bg-[#FACC15] hover:bg-[#yellow-300] text-white px-4 py-2 rounded-xl font-medium transition-colors">
                 Ask AI
               </button>
             </Link>

@@ -56,10 +56,10 @@
   --color-sidebar-accent-border: var(--sidebar-accent-border);
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --font-sans: 'Times New Roman', Times, serif;
+  --font-sans: 'EB Garamond', Georgia, serif;
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
-  --font-display: 'Times New Roman', Times, serif;
+  --font-display: 'EB Garamond', Georgia, serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -119,7 +119,7 @@
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
 
-  --app-font-sans: 'Times New Roman', Times, serif;
+  --app-font-sans: 'EB Garamond', Georgia, serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
   --radius: 1rem;

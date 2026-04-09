@@ -54,14 +54,14 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
     <div className={cn("flex gap-3", isUser && "flex-row-reverse")}>
       <div className={cn(
         "w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-sm font-semibold",
-        isUser ? "bg-[#1A2C20] text-white" : "bg-[#4D8F6A] text-white"
+        isUser ? "bg-[#1A1A2E] text-white" : "bg-[#FACC15] text-[#1A1A2E]"
       )}>
         {isUser ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
       </div>
       <div className={cn(
         "max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
         isUser
-          ? "bg-[#1A2C20] text-white rounded-tr-sm"
+          ? "bg-[#1A1A2E] text-white rounded-tr-sm"
           : "bg-white border border-gray-100 text-gray-800 rounded-tl-sm shadow-sm"
       )}>
         {msg.content.split("\n").map((line, i) => {
@@ -90,8 +90,8 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
 function TypingIndicator() {
   return (
     <div className="flex gap-3">
-      <div className="w-7 h-7 rounded-full bg-[#4D8F6A] flex items-center justify-center">
-        <Sparkles className="w-4 h-4 text-white" />
+      <div className="w-7 h-7 rounded-full bg-[#FACC15] flex items-center justify-center">
+        <Sparkles className="w-4 h-4 text-[#1A1A2E]" />
       </div>
       <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
         <div className="flex gap-1 items-center h-5">
@@ -120,7 +120,8 @@ export default function AdvisorPage() {
   const netWorth = profile.emergencyFund + profile.retirementBalance + profile.otherInvestments - totalDebt;
   const monthlyTakeHome = calculateMonthlyTakeHome(profile.grossIncome, profile.filingStatus, profile.state);
   const totalExpenses = profile.housing + profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses;
-  const monthlySurplus = monthlyTakeHome - totalExpenses + profile.monthlyRetirementContrib;
+  // Bug 2 fix: remove + profile.monthlyRetirementContrib (was double-counting retirement savings)
+  const monthlySurplus = monthlyTakeHome - totalExpenses;
 
   const { data: me } = useQuery({
     queryKey: ["me"],
@@ -168,6 +169,9 @@ export default function AdvisorPage() {
         timestamp: new Date().toISOString(),
       };
       addChatMessage(errMsg);
+    } finally {
+      // Bug 1 fix: always reset typing indicator
+      setIsTyping(false);
     }
   };
 
@@ -184,11 +188,11 @@ export default function AdvisorPage() {
           {/* Profile summary */}
           <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#1A2C20] flex items-center justify-center text-white font-bold">
+              <div className="w-10 h-10 rounded-full bg-[#1A1A2E] flex items-center justify-center text-white font-bold">
                 D
               </div>
               <div>
-                <div className="text-sm font-semibold text-[#1A2C20]">Your Profile</div>
+                <div className="text-sm font-semibold text-[#1A1A2E]">Your Profile</div>
                 <div className="text-xs text-gray-400">{profile.state} · {profile.filingStatus}</div>
               </div>
             </div>
@@ -204,7 +208,7 @@ export default function AdvisorPage() {
                   <span className="text-gray-500">{label}</span>
                   <span className={cn(
                     "font-semibold",
-                    positive === true ? "text-[#4D8F6A]" : positive === false ? "text-red-500" : "text-[#1A2C20]"
+                    positive === true ? "text-green-500" : positive === false ? "text-red-500" : "text-[#1A1A2E]"
                   )}>
                     {value}
                   </span>
@@ -221,7 +225,7 @@ export default function AdvisorPage() {
                 {scenarios.slice(0, 4).map((s) => (
                   <div
                     key={s.id}
-                    className="text-xs text-gray-600 hover:text-[#4D8F6A] cursor-pointer py-1 truncate transition-colors"
+                    className="text-xs text-gray-600 hover:text-[#FACC15] cursor-pointer py-1 truncate transition-colors"
                     onClick={() => sendMessage(`Tell me about my "${s.name}" scenario`)}
                   >
                     → {s.name}
@@ -239,9 +243,9 @@ export default function AdvisorPage() {
                 <button
                   key={text}
                   onClick={() => sendMessage(text)}
-                  className="w-full text-left text-xs text-gray-600 hover:text-[#4D8F6A] flex items-start gap-2 py-1.5 hover:bg-[#4D8F6A]/5 rounded-xl px-2 transition-colors"
+                  className="w-full text-left text-xs text-gray-600 hover:text-[#FACC15] flex items-start gap-2 py-1.5 hover:bg-[#FACC15]/5 rounded-xl px-2 transition-colors"
                 >
-                  <Icon className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#4D8F6A]" />
+                  <Icon className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#FACC15]" />
                   {text}
                 </button>
               ))}
@@ -252,10 +256,10 @@ export default function AdvisorPage() {
         {/* Right: Chat */}
         <div className="flex-1 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-w-0">
           {/* Chat header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-[#1A2C20]">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-[#1A1A2E]">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-[#4D8F6A]/20 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-[#4D8F6A]" />
+              <div className="w-8 h-8 rounded-xl bg-[#FACC15]/20 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-[#FACC15]" />
               </div>
               <div>
                 <div className="text-sm font-semibold text-white">Clarifin AI Advisor</div>
@@ -276,10 +280,10 @@ export default function AdvisorPage() {
           <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#F4F6F8]">
             {chatHistory.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                <div className="w-14 h-14 rounded-2xl bg-[#4D8F6A]/10 flex items-center justify-center mb-4">
-                  <Sparkles className="w-7 h-7 text-[#4D8F6A]" />
+                <div className="w-14 h-14 rounded-2xl bg-[#FACC15]/10 flex items-center justify-center mb-4">
+                  <Sparkles className="w-7 h-7 text-[#FACC15]" />
                 </div>
-                <h3 className="font-semibold text-[#1A2C20] mb-2">Ask me anything about your finances</h3>
+                <h3 className="font-semibold text-[#1A1A2E] mb-2">Ask me anything about your finances</h3>
                 <p className="text-sm text-gray-400 max-w-xs mb-6">
                   I know your financial profile and can model the impact of any life decision.
                 </p>
@@ -288,9 +292,9 @@ export default function AdvisorPage() {
                     <button
                       key={text}
                       onClick={() => sendMessage(text)}
-                      className="text-left text-xs bg-white border border-gray-200 hover:border-[#4D8F6A]/30 hover:bg-[#4D8F6A]/5 rounded-2xl p-3 flex items-start gap-2 transition-colors"
+                      className="text-left text-xs bg-white border border-gray-200 hover:border-[#FACC15]/30 hover:bg-[#FACC15]/5 rounded-2xl p-3 flex items-start gap-2 transition-colors"
                     >
-                      <Icon className="w-4 h-4 text-[#4D8F6A] shrink-0 mt-0.5" />
+                      <Icon className="w-4 h-4 text-[#FACC15] shrink-0 mt-0.5" />
                       <span className="text-gray-600">{text}</span>
                     </button>
                   ))}
@@ -333,14 +337,14 @@ export default function AdvisorPage() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask anything about your finances..."
                 disabled={isTyping}
-                className="flex-1 border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#4D8F6A] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15] disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || isTyping}
-                className="w-10 h-10 rounded-2xl bg-[#4D8F6A] hover:bg-[#3D7A5A] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-2xl bg-[#FACC15] hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
               >
-                <Send className="w-4 h-4 text-white" />
+                <Send className="w-4 h-4 text-[#1A1A2E]" />
               </button>
             </form>
           )}

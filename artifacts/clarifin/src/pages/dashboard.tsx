@@ -40,6 +40,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
 export default function DashboardPage() {
   const { profile, scenarios } = useStore();
   const [projYears, setProjYears] = useState<10 | 20 | 30>(30);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const monthlyTakeHome = useMemo(
     () => calculateMonthlyTakeHome(profile.grossIncome, profile.filingStatus, profile.state),
@@ -51,7 +52,8 @@ export default function DashboardPage() {
     [profile]
   );
 
-  const monthlySurplus = monthlyTakeHome - totalMonthlyExpenses + profile.monthlyRetirementContrib;
+  // Bug 2 fix: remove + profile.monthlyRetirementContrib (was double-counting retirement savings)
+  const monthlySurplus = monthlyTakeHome - totalMonthlyExpenses;
   const savingsRate = monthlyTakeHome > 0 ? ((monthlySurplus / monthlyTakeHome) * 100) : 0;
   const totalDebt = profile.creditCardDebt + profile.studentLoans + profile.carLoans + profile.otherDebt;
   const netWorth = profile.emergencyFund + profile.retirementBalance + profile.otherInvestments - totalDebt;
@@ -116,9 +118,18 @@ export default function DashboardPage() {
           </Link>
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-[#9CA3AF] shadow-sm flex-1 max-w-xs">
             <Search className="w-4 h-4 shrink-0" />
-            <span>Search scenarios...</span>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search scenarios..."
+              className="flex-1 bg-transparent outline-none text-[#1A1A2E] placeholder-[#9CA3AF] text-sm"
+            />
           </div>
-          <button className="w-10 h-10 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => window.location.href = '/app/scenarios'}
+            className="w-10 h-10 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
+          >
             <SlidersHorizontal className="w-4 h-4 text-[#9CA3AF]" />
           </button>
         </div>
@@ -221,7 +232,7 @@ export default function DashboardPage() {
                     </Link>
                   </div>
                 ) : (
-                  scenarios.slice(0, 4).map((s, i) => {
+                  scenarios.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())).slice(0, 4).map((s, i) => {
                     const Icon = TYPE_ICONS[s.type] ?? Sliders;
                     const colorClass = SCENARIO_COLORS[i % SCENARIO_COLORS.length];
                     return (
@@ -255,7 +266,10 @@ export default function DashboardPage() {
             <div className="bg-[#1A1A2E] rounded-2xl p-5 text-white shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-white/50 font-medium uppercase tracking-widest">Total Balance</p>
-                <button className="w-7 h-7 bg-white/10 rounded-full flex items-center justify-center">
+                <button
+                  onClick={() => window.location.href = '/app/profile'}
+                  className="w-7 h-7 bg-white/10 rounded-full flex items-center justify-center"
+                >
                   <ArrowUpRight className="w-3.5 h-3.5 text-white/60" />
                 </button>
               </div>

@@ -113,7 +113,7 @@ const SAMPLE_SCENARIOS: Scenario[] = [
       monthlyHousing: 0,
       homePurchasePrice: 500000,
       downPayment: 100000,
-      mortgageRate: 0.068,
+      mortgageRate: 6.8,
       loanTermYears: 30,
     },
   },

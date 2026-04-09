@@ -20,6 +20,8 @@ import {
   formatDiff,
 } from "@/lib/financial-engine";
 import { cn } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 
 const SCENARIO_TYPES: { id: ScenarioType; label: string; icon: React.ElementType; desc: string }[] = [
   { id: "job-change", label: "Job Change", icon: Briefcase, desc: "New offer or relocation" },
@@ -57,7 +59,7 @@ function Field({ label, prefix, value, onChange, type = "number", options, place
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-[#1A2C20] bg-white focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#4D8F6A]"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-[#1A1A2E] bg-white focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15]"
         >
           {options?.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
@@ -79,7 +81,7 @@ function Field({ label, prefix, value, onChange, type = "number", options, place
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className={cn(
-            "w-full border border-gray-200 rounded-lg py-2 text-sm text-[#1A2C20] bg-white focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#4D8F6A]",
+            "w-full border border-gray-200 rounded-lg py-2 text-sm text-[#1A1A2E] bg-white focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15]",
             prefix ? "pl-7 pr-3" : "px-3"
           )}
         />
@@ -109,7 +111,7 @@ function JobChangeFields({
       </div>
       {/* Proposed */}
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-[#4D8F6A] uppercase tracking-wide">New Scenario</h3>
+        <h3 className="text-xs font-semibold text-[#1A1A2E] uppercase tracking-wide">New Scenario</h3>
         <Field label="New Salary" prefix="$" value={prop.income} onChange={(v) => setProp("income", v)} min={0} />
         <Field label="New City" type="select" options={CITIES} value={prop.city as string} onChange={(v) => setProp("city", v)} />
         <Field label="New Monthly Rent" prefix="$" value={prop.housing} onChange={(v) => setProp("housing", v)} min={0} />
@@ -138,7 +140,7 @@ function BuyHomeFields({
         <Field label="State" type="select" options={US_STATES} value={curr.state as string} onChange={(v) => setCurr("state", v)} />
       </div>
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold text-[#4D8F6A] uppercase tracking-wide">New Scenario (Buying)</h3>
+        <h3 className="text-xs font-semibold text-[#1A1A2E] uppercase tracking-wide">New Scenario (Buying)</h3>
         <Field label="Home Purchase Price" prefix="$" value={prop.homePrice} onChange={(v) => setProp("homePrice", v)} min={0} />
         <Field label="Down Payment" prefix="$" value={prop.downPayment} onChange={(v) => setProp("downPayment", v)} min={0} />
         <Field label="Mortgage Rate (%)" value={prop.mortgageRate} onChange={(v) => setProp("mortgageRate", v)} min={0} />
@@ -181,6 +183,8 @@ function getDefaultState(type: ScenarioType, profile: { grossIncome: number; hou
 export default function ScenarioBuilderPage() {
   const [, navigate] = useLocation();
   const { profile, addScenario } = useStore();
+  const queryClient = useQueryClient();
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [scenarioType, setScenarioType] = useState<ScenarioType>("job-change");
   const [scenarioName, setScenarioName] = useState("My new scenario");
@@ -266,18 +270,61 @@ export default function ScenarioBuilderPage() {
     };
   }, [curr, prop, profile, scenarioType]);
 
+  // ── Save mutation (Bug 3 fix) ─────────────────────────────────────────────
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      // Build current and proposed objects with all relevant fields
+      const currentObj: Record<string, unknown> = {
+        income: Number(curr.income),
+        city: curr.city as string,
+        monthlyHousing: Number(curr.housing) || 0,
+        state: curr.state as string,
+      };
+
+      const proposedObj: Record<string, unknown> = {
+        income: Number(prop.income ?? curr.income),
+        city: (prop.city ?? curr.city) as string,
+        monthlyHousing: analysis.propMonthlyHousing,
+        state: (prop.state ?? curr.state) as string,
+      };
+
+      if (scenarioType === "buy-home") {
+        proposedObj.homePurchasePrice = Number(prop.homePrice) || 0;
+        proposedObj.downPayment = Number(prop.downPayment) || 0;
+        proposedObj.mortgageRate = Number(prop.mortgageRate) || 6.8;
+        proposedObj.loanTermYears = Number(prop.loanTerm) || 30;
+        proposedObj.propertyTax = Number(prop.propertyTax) || 0;
+      }
+
+      if (scenarioType === "job-change") {
+        proposedObj.movingCost = Number(prop.movingCost) || 0;
+      }
+
+      const body = {
+        name: scenarioName,
+        type: scenarioType,
+        current: currentObj,
+        proposed: proposedObj,
+      };
+
+      return customFetch<Scenario>("/api/scenarios", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    },
+    onSuccess: (savedScenario) => {
+      addScenario(savedScenario);
+      queryClient.invalidateQueries({ queryKey: ["scenarios"] });
+      navigate(`/app/scenarios/${savedScenario.id}`);
+    },
+    onError: () => {
+      setSaveError("Failed to save scenario. Please try again.");
+    },
+  });
+
   const handleSave = () => {
-    const id = `scenario-${Date.now()}`;
-    const scenario: Scenario = {
-      id,
-      name: scenarioName,
-      type: scenarioType,
-      createdAt: new Date().toISOString(),
-      current: { income: Number(curr.income), city: curr.city as string, monthlyHousing: Number(curr.housing) },
-      proposed: { income: Number(prop.income ?? curr.income), city: (prop.city ?? curr.city) as string, monthlyHousing: analysis.propMonthlyHousing },
-    };
-    addScenario(scenario);
-    navigate(`/app/scenarios/${id}`);
+    setSaveError(null);
+    saveMutation.mutate();
   };
 
   return (
@@ -285,7 +332,7 @@ export default function ScenarioBuilderPage() {
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-[#1A2C20]">Scenario Builder</h1>
+          <h1 className="text-2xl font-bold text-[#1A1A2E]">Scenario Builder</h1>
           <p className="text-sm text-gray-500 mt-0.5">Model any life decision and see the financial impact instantly.</p>
         </div>
 
@@ -294,7 +341,7 @@ export default function ScenarioBuilderPage() {
           type="text"
           value={scenarioName}
           onChange={(e) => setScenarioName(e.target.value)}
-          className="text-xl font-semibold text-[#1A2C20] bg-transparent border-b-2 border-gray-200 focus:border-[#4D8F6A] focus:outline-none py-1 w-full max-w-md"
+          className="text-xl font-semibold text-[#1A1A2E] bg-transparent border-b-2 border-gray-200 focus:border-[#FACC15] focus:outline-none py-1 w-full max-w-md"
           placeholder="Name this scenario..."
         />
 
@@ -307,8 +354,8 @@ export default function ScenarioBuilderPage() {
               className={cn(
                 "flex flex-col items-center gap-1.5 p-3 rounded-xl border text-xs font-medium transition-all",
                 scenarioType === id
-                  ? "bg-[#1A2C20] text-white border-[#0D1B2A]"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-[#4D8F6A]/40 hover:bg-[#4D8F6A]/5"
+                  ? "bg-[#1A1A2E] text-white border-[#0D1B2A]"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-[#FACC15]/40 hover:bg-[#FACC15]/5"
               )}
               title={desc}
             >
@@ -344,13 +391,13 @@ export default function ScenarioBuilderPage() {
         <div className="grid lg:grid-cols-3 gap-5">
           {/* Comparison table */}
           <div className="lg:col-span-1 bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h2 className="font-semibold text-[#1A2C20] mb-4 text-sm">Monthly Breakdown</h2>
+            <h2 className="font-semibold text-[#1A1A2E] mb-4 text-sm">Monthly Breakdown</h2>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-400 uppercase">
                   <th className="text-left pb-2 font-medium">Item</th>
                   <th className="text-right pb-2 font-medium">Current</th>
-                  <th className="text-right pb-2 font-medium text-[#4D8F6A]">New</th>
+                  <th className="text-right pb-2 font-medium text-[#1A1A2E]">New</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -366,7 +413,7 @@ export default function ScenarioBuilderPage() {
                       <td className="py-2 text-right font-medium">{formatCurrency(row.curr)}</td>
                       <td className="py-2 text-right font-medium">
                         {row.prop !== null ? (
-                          <span className={diff !== null && diff > 0 ? "text-[#4D8F6A]" : diff !== null && diff < 0 ? "text-red-500" : ""}>
+                          <span className={diff !== null && diff > 0 ? "text-green-500" : diff !== null && diff < 0 ? "text-red-500" : ""}>
                             {formatCurrency(row.prop)}
                           </span>
                         ) : (
@@ -379,9 +426,9 @@ export default function ScenarioBuilderPage() {
               </tbody>
               <tfoot>
                 <tr className="border-t border-gray-200">
-                  <td className="pt-3 text-xs font-semibold text-[#1A2C20]">Net monthly</td>
-                  <td className="pt-3 text-right font-bold text-[#1A2C20]">{formatCurrency(analysis.currSurplus)}</td>
-                  <td className="pt-3 text-right font-bold" style={{ color: analysis.propSurplus >= analysis.currSurplus ? "#1D9E75" : "#ef4444" }}>
+                  <td className="pt-3 text-xs font-semibold text-[#1A1A2E]">Net monthly</td>
+                  <td className="pt-3 text-right font-bold text-[#1A1A2E]">{formatCurrency(analysis.currSurplus)}</td>
+                  <td className="pt-3 text-right font-bold" style={{ color: analysis.propSurplus >= analysis.currSurplus ? "#22C55E" : "#ef4444" }}>
                     {formatCurrency(analysis.propSurplus)}
                   </td>
                 </tr>
@@ -391,11 +438,11 @@ export default function ScenarioBuilderPage() {
             <div className="mt-4 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">Retirement age (current)</span>
-                <span className="font-semibold text-[#1A2C20]">Age {analysis.retireCurr}</span>
+                <span className="font-semibold text-[#1A1A2E]">Age {analysis.retireCurr}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">Retirement age (new)</span>
-                <span className="font-semibold" style={{ color: analysis.retireProp <= analysis.retireCurr ? "#1D9E75" : "#ef4444" }}>
+                <span className="font-semibold" style={{ color: analysis.retireProp <= analysis.retireCurr ? "#22C55E" : "#ef4444" }}>
                   Age {analysis.retireProp}
                 </span>
               </div>
@@ -404,7 +451,7 @@ export default function ScenarioBuilderPage() {
 
           {/* Projection chart */}
           <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h2 className="font-semibold text-[#1A2C20] mb-1 text-sm">30-Year Net Worth Projection</h2>
+            <h2 className="font-semibold text-[#1A1A2E] mb-1 text-sm">30-Year Net Worth Projection</h2>
             <p className="text-xs text-gray-400 mb-4">7% avg annual return</p>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={analysis.projData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
@@ -414,8 +461,8 @@ export default function ScenarioBuilderPage() {
                     <stop offset="95%" stopColor="#0D1B2A" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gprop" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1D9E75" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#1D9E75" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#FACC15" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#FACC15" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -426,7 +473,7 @@ export default function ScenarioBuilderPage() {
                   formatter={(v: number) => formatCurrency(v)} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Area type="monotone" dataKey="Current" stroke="#0D1B2A" strokeWidth={2} fill="url(#gcurr)" />
-                <Area type="monotone" dataKey="New Scenario" stroke="#1D9E75" strokeWidth={2} fill="url(#gprop)" />
+                <Area type="monotone" dataKey="New Scenario" stroke="#FACC15" strokeWidth={2} fill="url(#gprop)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -436,22 +483,22 @@ export default function ScenarioBuilderPage() {
         <div className={cn(
           "rounded-xl border p-5 flex items-start gap-4",
           analysis.propWins
-            ? "bg-[#4D8F6A]/8 border-[#4D8F6A]/20"
+            ? "bg-[#FFF9E6] border-yellow-200"
             : "bg-orange-50 border-orange-200"
         )}>
           <div className={cn(
             "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-            analysis.propWins ? "bg-[#4D8F6A]" : "bg-orange-400"
+            analysis.propWins ? "bg-[#FACC15]" : "bg-orange-400"
           )}>
-            {analysis.propWins ? <Award className="w-5 h-5 text-white" /> : <AlertCircle className="w-5 h-5 text-white" />}
+            {analysis.propWins ? <Award className="w-5 h-5 text-[#1A1A2E]" /> : <AlertCircle className="w-5 h-5 text-white" />}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-[#1A2C20]">
+              <h3 className="font-semibold text-[#1A1A2E]">
                 {analysis.propWins ? "New scenario wins financially" : "Current path is stronger"}
               </h3>
               {analysis.propWins ? (
-                <TrendingUp className="w-4 h-4 text-[#4D8F6A]" />
+                <TrendingUp className="w-4 h-4 text-green-500" />
               ) : (
                 <TrendingDown className="w-4 h-4 text-orange-500" />
               )}
@@ -465,17 +512,23 @@ export default function ScenarioBuilderPage() {
           </div>
         </div>
 
+        {/* Error state */}
+        {saveError && (
+          <p className="text-sm text-red-500">{saveError}</p>
+        )}
+
         {/* Actions */}
         <div className="flex gap-3">
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 bg-[#4D8F6A] hover:bg-[#3D7A5A] text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors"
+            disabled={saveMutation.isPending}
+            className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-6 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Save scenario
-            <ArrowRight className="w-4 h-4" />
+            {saveMutation.isPending ? "Saving..." : "Save scenario"}
+            {!saveMutation.isPending && <ArrowRight className="w-4 h-4" />}
           </button>
           <a href="/app/advisor">
-            <button className="flex items-center gap-2 bg-[#1A2C20] hover:bg-[#1a2e40] text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors">
+            <button className="flex items-center gap-2 bg-[#1A1A2E] hover:bg-[#1a2e40] text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors">
               Ask AI advisor
             </button>
           </a>

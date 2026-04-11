@@ -89,35 +89,9 @@ const DEFAULT_PROFILE: FinancialProfile = {
   studentLoans: 20000,
   carLoans: 8000,
   otherDebt: 0,
-  isComplete: true,
+  isComplete: false,
 };
 
-const SAMPLE_SCENARIOS: Scenario[] = [
-  {
-    id: "sample-1",
-    name: "NYC vs Austin job offer",
-    type: "job-change",
-    createdAt: new Date().toISOString(),
-    current: { income: 70000, city: "Austin, TX", monthlyHousing: 1800 },
-    proposed: { income: 95000, city: "New York, NY", monthlyHousing: 3200, movingCost: 8000 },
-  },
-  {
-    id: "sample-2",
-    name: "Buy vs rent in Denver",
-    type: "buy-home",
-    createdAt: new Date().toISOString(),
-    current: { income: 85000, city: "Denver, CO", monthlyHousing: 2200 },
-    proposed: {
-      income: 85000,
-      city: "Denver, CO",
-      monthlyHousing: 0,
-      homePurchasePrice: 500000,
-      downPayment: 100000,
-      mortgageRate: 6.8,
-      loanTermYears: 30,
-    },
-  },
-];
 
 // ── Context ───────────────────────────────────────────────────────────────
 
@@ -157,7 +131,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     load("clarifin_profile", DEFAULT_PROFILE)
   );
   const [scenarios, setScenarios] = useState<Scenario[]>(() =>
-    load("clarifin_scenarios", SAMPLE_SCENARIOS)
+    load("clarifin_scenarios", [])
   );
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() =>
     load("clarifin_chat", [])

@@ -119,9 +119,23 @@ export default function ProfileSetupPage() {
     <AppLayout>
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[#1A1A2E]">Set up your financial profile</h1>
-          <p className="text-gray-500 text-sm mt-1">This is the foundation for all your scenarios. Takes about 3 minutes.</p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[#1A1A2E]">
+              {existing ? "Edit your financial profile" : "Set up your financial profile"}
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              {existing ? "Update your numbers to keep your scenarios accurate." : "This is the foundation for all your scenarios. Takes about 3 minutes."}
+            </p>
+          </div>
+          {existing && (
+            <button
+              onClick={() => navigate("/app/dashboard")}
+              className="text-sm text-gray-500 hover:text-[#1A1A2E] transition-colors mt-1"
+            >
+              ← Back to Dashboard
+            </button>
+          )}
         </div>
 
         {/* Progress */}
@@ -249,7 +263,7 @@ export default function ProfileSetupPage() {
               disabled={mutation.isPending}
               className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] text-sm font-semibold transition-colors disabled:opacity-60"
             >
-              {mutation.isPending ? "Saving..." : "Complete setup"}
+              {mutation.isPending ? "Saving..." : existing ? "Save changes" : "Complete setup"}
               {!mutation.isPending && <CheckCircle className="w-4 h-4" />}
             </button>
           )}

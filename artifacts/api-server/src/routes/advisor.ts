@@ -2,8 +2,8 @@ import { Router } from "express"
 import type { Request, Response, NextFunction } from "express"
 import Anthropic from "@anthropic-ai/sdk"
 import { db } from "@workspace/db"
-import { profilesTable, scenariosTable } from "@workspace/db/schema"
-import { eq } from "drizzle-orm"
+import { profilesTable, scenariosTable, chatMessagesTable } from "@workspace/db/schema"
+import { eq, count } from "drizzle-orm"
 import { requireAuth } from "../middleware/auth"
 import { z } from "zod"
 
@@ -19,9 +19,16 @@ const messageSchema = z.object({
 })
 
 router.post("/advisor", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  // Free plan: 3 AI messages lifetime, then gate
   if (req.clarifin!.plan === "free") {
-    res.status(402).json({ error: "AI Advisor requires Plus plan. Upgrade to unlock." })
-    return
+    const [{ value: msgCount }] = await db
+      .select({ value: count() })
+      .from(chatMessagesTable)
+      .where(eq(chatMessagesTable.userId, req.clarifin!.userId))
+    if (msgCount >= 6) { // 3 user + 3 assistant = 6 rows
+      res.status(402).json({ error: "Free plan includes 3 AI Advisor messages. Upgrade to Plus for unlimited." })
+      return
+    }
   }
 
   const parsed = messageSchema.safeParse(req.body)
@@ -70,6 +77,13 @@ Be specific with dollar amounts. Use the user's actual numbers when doing calcul
     })
 
     const reply = response.content[0].type === "text" ? response.content[0].text : ""
+
+    // Persist both turns to DB (used for free-tier counting + future history loading)
+    await db.insert(chatMessagesTable).values([
+      { userId: req.clarifin!.userId, role: "user", content: message },
+      { userId: req.clarifin!.userId, role: "assistant", content: reply },
+    ])
+
     res.json({ reply })
   } catch (err) {
     next(err)

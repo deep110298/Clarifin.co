@@ -19,14 +19,14 @@ const messageSchema = z.object({
 })
 
 router.post("/advisor", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  // Free plan: 3 AI messages lifetime, then gate
+  // Free plan: 5 questions lifetime, then gate
   if (req.clarifin!.plan === "free") {
     const [{ value: msgCount }] = await db
       .select({ value: count() })
       .from(chatMessagesTable)
       .where(eq(chatMessagesTable.userId, req.clarifin!.userId))
-    if (msgCount >= 6) { // 3 user + 3 assistant = 6 rows
-      res.status(402).json({ error: "Free plan includes 3 AI Advisor messages. Upgrade to Plus for unlimited." })
+    if (msgCount >= 10) { // 5 user + 5 assistant = 10 rows
+      res.status(402).json({ error: "Free plan includes 5 AI Advisor questions. Upgrade to Pro for unlimited." })
       return
     }
   }

@@ -190,7 +190,7 @@ export default function AdvisorPage() {
         addChatMessage({
           id: `msg-${Date.now()}-gate`,
           role: "assistant",
-          content: "You've used your **3 free AI messages**. Upgrade to Plus for $12/mo to unlock unlimited conversations with your full financial profile.",
+          content: "You've used your **5 free questions**. Upgrade to Pro to unlock unlimited AI Advisor conversations and get the most out of your financial planning.",
           timestamp: new Date().toISOString(),
         });
         return;
@@ -307,7 +307,7 @@ export default function AdvisorPage() {
               </div>
               <div>
                 <div className="text-sm font-semibold text-white">Clarifin AI Advisor</div>
-                <div className="text-xs text-white/50">Powered by Claude · Context-aware</div>
+                <div className="text-xs text-white/50">Context-aware financial coach</div>
               </div>
             </div>
             <button

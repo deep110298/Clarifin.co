@@ -6,6 +6,7 @@ import meRouter from "./me"
 import profileRouter from "./profile"
 import scenariosRouter from "./scenarios"
 import advisorRouter from "./advisor"
+import chatRouter from "./chat"
 import billingRouter from "./billing"
 
 const router: IRouter = Router()
@@ -19,6 +20,7 @@ router.use(meRouter)
 router.use(profileRouter)
 router.use(scenariosRouter)
 router.use(advisorRouter)
+router.use(chatRouter)
 router.use(billingRouter)
 
 export default router

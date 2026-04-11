@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
-import { Send, Sparkles, User, TrendingUp, DollarSign, Home, GraduationCap, RefreshCw, Lock } from "lucide-react";
+import { Send, Sparkles, User, TrendingUp, DollarSign, Home, GraduationCap, RefreshCw } from "lucide-react";
 import { AppLayout } from "@/components/app/AppLayout";
 import { useStore } from "@/lib/store";
 import type { ChatMessage } from "@/lib/store";
 import { calculateMonthlyTakeHome, formatCurrency } from "@/lib/financial-engine";
 import { cn } from "@/lib/utils";
 import { customFetch } from "@workspace/api-client-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ── Mock AI responses ──────────────────────────────────────────────────────
 // Wire this to the Claude API by replacing `getMockResponse` with a fetch
@@ -108,6 +108,18 @@ function TypingIndicator() {
   );
 }
 
+// ── DB chat message shape ──────────────────────────────────────────────────
+interface DbChatMessage {
+  id: string;
+  role: string;
+  content: string;
+  createdAt: string;
+}
+
+function dbMsgToChat(m: DbChatMessage): ChatMessage {
+  return { id: m.id, role: m.role as "user" | "assistant", content: m.content, timestamp: m.createdAt };
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function AdvisorPage() {
   const { profile, scenarios, chatHistory, addChatMessage, clearChat } = useStore();
@@ -115,23 +127,41 @@ export default function AdvisorPage() {
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
 
   const totalDebt = profile.creditCardDebt + profile.studentLoans + profile.carLoans + profile.otherDebt;
   const netWorth = profile.emergencyFund + profile.retirementBalance + profile.otherInvestments - totalDebt;
   const monthlyTakeHome = calculateMonthlyTakeHome(profile.grossIncome, profile.filingStatus, profile.state);
   const totalExpenses = profile.housing + profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses;
-  // Bug 2 fix: remove + profile.monthlyRetirementContrib (was double-counting retirement savings)
   const monthlySurplus = monthlyTakeHome - totalExpenses;
 
-  const { data: me } = useQuery({
-    queryKey: ["me"],
-    queryFn: () => customFetch<{ plan: string }>("/api/me"),
+  useQuery({ queryKey: ["me"], queryFn: () => customFetch<{ plan: string }>("/api/me") });
+
+  // Load chat history from DB on mount; seed local store if it's empty
+  const { data: dbHistory } = useQuery({
+    queryKey: ["chat"],
+    queryFn: () => customFetch<DbChatMessage[]>("/api/chat"),
   });
-  const isFree = me?.plan === "free";
+
+  useEffect(() => {
+    if (dbHistory && chatHistory.length === 0 && dbHistory.length > 0) {
+      dbHistory.forEach(m => addChatMessage(dbMsgToChat(m)));
+    }
+  }, [dbHistory]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory, isTyping]);
+
+  const handleClearChat = async () => {
+    clearChat();
+    try {
+      await customFetch("/api/chat", { method: "DELETE" });
+      qc.invalidateQueries({ queryKey: ["chat"] });
+    } catch {
+      // best-effort
+    }
+  };
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isTyping) return;
@@ -158,9 +188,9 @@ export default function AdvisorPage() {
 
       if (res.status === 402) {
         addChatMessage({
-          id: `msg-${Date.now()}-err`,
+          id: `msg-${Date.now()}-gate`,
           role: "assistant",
-          content: "The AI Advisor requires a **Plus plan**. Upgrade for $12/mo to unlock unlimited AI conversations with your full financial profile.",
+          content: "You've used your **3 free AI messages**. Upgrade to Plus for $12/mo to unlock unlimited conversations with your full financial profile.",
           timestamp: new Date().toISOString(),
         });
         return;
@@ -281,7 +311,7 @@ export default function AdvisorPage() {
               </div>
             </div>
             <button
-              onClick={clearChat}
+              onClick={handleClearChat}
               className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors"
               title="Clear chat"
             >
@@ -324,44 +354,25 @@ export default function AdvisorPage() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Upgrade gate for free plan */}
-          {isFree ? (
-            <div className="p-4 border-t border-gray-100 bg-amber-50">
-              <div className="flex items-center gap-3">
-                <Lock className="w-5 h-5 text-amber-500 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-amber-800">AI Advisor requires Plus plan</p>
-                  <p className="text-xs text-amber-600">Upgrade for $12/mo to unlock unlimited AI conversations.</p>
-                </div>
-                <button
-                  onClick={() => customFetch<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan: "plus" }) })
-                    .then(r => { window.location.href = r.url })}
-                  className="shrink-0 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl font-medium transition-colors"
-                >
-                  Upgrade
-                </button>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex items-center gap-3 p-4 border-t border-gray-100 bg-white">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask anything about your finances..."
-                disabled={isTyping}
-                className="flex-1 border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15] disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <button
-                type="submit"
-                disabled={!input.trim() || isTyping}
-                className="w-10 h-10 rounded-2xl bg-[#FACC15] hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-              >
-                <Send className="w-4 h-4 text-[#1A1A2E]" />
-              </button>
-            </form>
-          )}
+          {/* Input */}
+          <form onSubmit={handleSubmit} className="flex items-center gap-3 p-4 border-t border-gray-100 bg-white">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask anything about your finances..."
+              disabled={isTyping}
+              className="flex-1 border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15] disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isTyping}
+              className="w-10 h-10 rounded-2xl bg-[#FACC15] hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+            >
+              <Send className="w-4 h-4 text-[#1A1A2E]" />
+            </button>
+          </form>
         </div>
       </div>
     </AppLayout>

@@ -1,1 +1,1 @@
-export { default } from '../../api-server/dist/app.mjs';
+export { default } from './_server.mjs';

@@ -2,6 +2,7 @@
 
 # compiled output
 dist
+artifacts/clarifin/api/_server.mjs
 tmp
 out-tsc
 *.tsbuildinfo

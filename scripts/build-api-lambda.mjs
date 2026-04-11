@@ -18,13 +18,15 @@ globalThis.require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const apiServerDir = path.resolve(root, "artifacts/api-server");
+// Output inside the rootDirectory (artifacts/clarifin) so Vercel includes it in the Lambda deployment
+const outfile = path.resolve(root, "artifacts/clarifin/api/_server.mjs");
 
 await esbuild({
   entryPoints: [path.resolve(apiServerDir, "src/app.ts")],
   platform: "node",
   bundle: true,
   format: "esm",
-  outfile: path.resolve(apiServerDir, "dist/app.mjs"),
+  outfile,
   logLevel: "info",
   external: [
     "*.node",
@@ -57,4 +59,4 @@ globalThis.__dirname = __path.dirname(globalThis.__filename);
   },
 });
 
-console.log("✅  Built api-server Lambda bundle → artifacts/api-server/dist/app.mjs");
+console.log("✅  Built api-server Lambda bundle → artifacts/clarifin/api/_server.mjs");

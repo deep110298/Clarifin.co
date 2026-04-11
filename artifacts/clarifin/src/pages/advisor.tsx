@@ -47,6 +47,18 @@ const SUGGESTED = [
   { icon: GraduationCap, text: "How does going back to school affect retirement?" },
 ];
 
+// ── Inline markdown renderer (bold only) ───────────────────────────────────
+function InlineText({ text }: { text: string }) {
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  return (
+    <>
+      {parts.map((part, j) =>
+        j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+      )}
+    </>
+  );
+}
+
 // ── Message bubble ─────────────────────────────────────────────────────────
 function MessageBubble({ msg }: { msg: ChatMessage }) {
   const isUser = msg.role === "user";
@@ -65,19 +77,31 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           : "bg-white border border-gray-100 text-gray-800 rounded-tl-sm shadow-sm"
       )}>
         {msg.content.split("\n").map((line, i) => {
-          if (line.startsWith("**") && line.endsWith("**")) {
-            return <p key={i} className="font-semibold mt-2 mb-0.5">{line.slice(2, -2)}</p>;
+          // Divider
+          if (/^---+$/.test(line.trim())) {
+            return <hr key={i} className="my-2 border-gray-200" />;
           }
+          // Heading line (standalone **text**)
+          if (/^\*\*[^*]+\*\*$/.test(line.trim())) {
+            return <p key={i} className="font-semibold mt-2 mb-0.5"><InlineText text={line.trim().slice(2, -2)} /></p>;
+          }
+          // Bullet — strip leading `- ` or `• ` then render with inline bold
           if (line.startsWith("- ") || line.startsWith("• ")) {
-            return <p key={i} className="ml-3">• {line.slice(2)}</p>;
+            return (
+              <p key={i} className="ml-3 mt-0.5">
+                <span className="mr-1.5">•</span>
+                <InlineText text={line.slice(2)} />
+              </p>
+            );
           }
-          // inline bold
-          const parts = line.split(/\*\*(.*?)\*\*/g);
+          // Blank line → spacing
+          if (line.trim() === "") {
+            return <div key={i} className="h-1" />;
+          }
+          // Default paragraph with inline bold
           return (
             <p key={i} className={i > 0 ? "mt-1" : ""}>
-              {parts.map((part, j) =>
-                j % 2 === 1 ? <strong key={j}>{part}</strong> : part
-              )}
+              <InlineText text={line} />
             </p>
           );
         })}

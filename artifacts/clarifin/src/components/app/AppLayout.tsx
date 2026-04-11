@@ -16,11 +16,10 @@ const NAV = [
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { user } = useUser();
   const { signOut } = useClerk();
 
-  const initials = user?.firstName?.[0] ?? user?.emailAddresses?.[0]?.emailAddress?.[0]?.toUpperCase() ?? "U";
   const displayName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
     : user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Account";
@@ -62,15 +61,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
-          <Link href="/app/profile">
-            <div className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all mt-4",
-              "text-[#9CA3AF] hover:bg-gray-50 hover:text-[#1A1A2E]"
-            )}>
-              <Settings style={{ width: 18, height: 18 }} strokeWidth={1.8} />
-              <span>Settings</span>
-            </div>
-          </Link>
+          <button
+            onClick={() => navigate("/app/profile")}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all mt-4",
+              location === "/app/profile"
+                ? "bg-[#FACC15] text-[#1A1A2E] shadow-sm"
+                : "text-[#9CA3AF] hover:bg-gray-50 hover:text-[#1A1A2E]"
+            )}
+          >
+            <Settings style={{ width: 18, height: 18 }} strokeWidth={location === "/app/profile" ? 2.5 : 1.8} />
+            <span>Settings</span>
+          </button>
         </nav>
 
         {/* Upgrade CTA */}
@@ -81,7 +83,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <p className="text-xs text-white/60 mb-1">Want unlimited scenarios?</p>
           <p className="text-sm font-semibold mb-3">Upgrade to Plus</p>
           <button
-            onClick={() => window.location.href = "/app/profile"}
+            onClick={() => navigate("/app/profile")}
             className="w-full bg-[#FACC15] text-[#1A1A2E] text-xs font-bold py-2 rounded-lg hover:bg-yellow-300 transition-colors"
           >
             Upgrade to Pro

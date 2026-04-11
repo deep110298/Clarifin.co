@@ -147,30 +147,44 @@ export default function AdvisorPage() {
     setIsTyping(true);
 
     try {
-      const { reply } = await customFetch<{ reply: string }>("/api/advisor", {
+      const res = await fetch("/api/advisor", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text,
           history: chatHistory.slice(-10).map(m => ({ role: m.role, content: m.content })),
         }),
       });
-      const aiMsg: ChatMessage = {
+
+      if (res.status === 402) {
+        addChatMessage({
+          id: `msg-${Date.now()}-err`,
+          role: "assistant",
+          content: "The AI Advisor requires a **Plus plan**. Upgrade for $12/mo to unlock unlimited AI conversations with your full financial profile.",
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const { reply } = await res.json() as { reply: string };
+      addChatMessage({
         id: `msg-${Date.now()}-ai`,
         role: "assistant",
         content: reply,
         timestamp: new Date().toISOString(),
-      };
-      addChatMessage(aiMsg);
+      });
     } catch {
-      const errMsg: ChatMessage = {
+      addChatMessage({
         id: `msg-${Date.now()}-err`,
         role: "assistant",
-        content: "Sorry, I couldn't process your request. Please try again.",
+        content: "Something went wrong connecting to the AI. Please check your connection and try again.",
         timestamp: new Date().toISOString(),
-      };
-      addChatMessage(errMsg);
+      });
     } finally {
-      // Bug 1 fix: always reset typing indicator
       setIsTyping(false);
     }
   };

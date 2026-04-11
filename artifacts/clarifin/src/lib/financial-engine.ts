@@ -121,12 +121,19 @@ export function calculateMortgagePayment(
   return Math.round(payment);
 }
 
+// ── Retirement target (Rule of 25) ────────────────────────────────────────
+// 25x annual expenses = the nest egg that supports a 4% safe withdrawal rate.
+// A person spending $5,000/month needs $1.5M to retire, not a flat $1M.
+export function calculateRetirementTarget(monthlyExpenses: number): number {
+  return Math.round(monthlyExpenses * 12 * 25);
+}
+
 // ── Retirement age estimator ───────────────────────────────────────────────
 export function estimateRetirementAge(
   currentAge: number,
   currentSavings: number,
   monthlySavings: number,
-  targetAmount = 1_000_000,
+  targetAmount: number,
   annualReturn = 0.07
 ): number {
   const monthlyRate = annualReturn / 12;

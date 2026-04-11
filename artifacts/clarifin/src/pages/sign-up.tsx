@@ -14,7 +14,6 @@ export default function SignUpPage() {
         <p className="text-gray-500 text-sm">Create your free account</p>
       </div>
       <SignUp
-        routing="hash"
         signInUrl="/sign-in"
         afterSignUpUrl="/app/profile"
         appearance={{

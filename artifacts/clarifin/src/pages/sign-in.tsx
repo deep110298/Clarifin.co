@@ -14,7 +14,6 @@ export default function SignInPage() {
         <p className="text-gray-500 text-sm">Sign in to your account</p>
       </div>
       <SignIn
-        routing="hash"
         signUpUrl="/sign-up"
         afterSignInUrl="/app/dashboard"
         appearance={{

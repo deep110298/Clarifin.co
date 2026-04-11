@@ -11,8 +11,8 @@ import {
 } from "lucide-react"
 import { AppLayout } from "@/components/app/AppLayout"
 import {
-  calculateMonthlyTakeHome, calculateMortgagePayment, projectNetWorth,
-  estimateRetirementAge, formatCurrency,
+  calculateMonthlyTakeHome, calculateMortgagePayment, calculateRetirementTarget,
+  projectNetWorth, estimateRetirementAge, formatCurrency,
 } from "@/lib/financial-engine"
 import { useStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -95,31 +95,82 @@ export default function ScenarioDetailPage() {
     const prop = scenario.proposed
 
     const currIncome = Number(curr.income) || profile.grossIncome
-    const propIncome = Number(prop.income) || currIncome
     const currState = (curr.state as string) || profile.state
-    const propState = (prop.state as string) || currState
+    const otherExpenses = profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses
 
     const currTakeHome = calculateMonthlyTakeHome(currIncome, profile.filingStatus, currState)
-    const propTakeHome = calculateMonthlyTakeHome(propIncome, profile.filingStatus, propState)
-
     const currMonthlyHousing = Number(curr.monthlyHousing ?? curr.housing) || profile.housing
-    let propMonthlyHousing = Number(prop.monthlyHousing ?? prop.housing) || 0
+    const currSurplus = currTakeHome - currMonthlyHousing - otherExpenses
 
-    if (scenario.type === "buy-home" && !prop.monthlyHousing) {
-      const homePrice = Number(prop.homePurchasePrice) || 0
-      const down = Number(prop.downPayment) || 0
-      const rate = (Number(prop.mortgageRate) || 6.8) / 100
-      const term = Number(prop.loanTermYears) || 30
-      const propertyTax = (Number(prop.propertyTax) || 0) / 12
-      const mortgage = calculateMortgagePayment(homePrice - down, rate, term)
-      propMonthlyHousing = mortgage + propertyTax + (homePrice * 0.01) / 12
+    // ── Proposed: derive correctly per scenario type ──────────────────────
+    let propTakeHome = currTakeHome
+    // Default housing to CURRENT housing (not 0) — scenarios that don't change housing should not gain a free $0 housing entry
+    let propMonthlyHousing = Number(prop.monthlyHousing ?? prop.housing) || currMonthlyHousing
+    let propScenarioCosts = Number(prop.scenarioCosts) || 0
+
+    if (scenario.type === "buy-home") {
+      if (!prop.monthlyHousing) {
+        const homePrice = Number(prop.homePurchasePrice) || 0
+        const down = Number(prop.downPayment) || 0
+        const rate = (Number(prop.mortgageRate) || 6.8) / 100
+        const term = Number(prop.loanTermYears) || 30
+        const propertyTax = (Number(prop.propertyTax) || 0) / 12
+        const mortgage = calculateMortgagePayment(homePrice - down, rate, term)
+        propMonthlyHousing = mortgage + propertyTax + (homePrice * 0.01) / 12
+      }
+      // income unchanged for buy-home
+
+    } else if (scenario.type === "job-change" || scenario.type === "custom") {
+      const propIncome = Number(prop.income) || currIncome
+      const propState = (prop.state as string) || currState
+      propTakeHome = calculateMonthlyTakeHome(propIncome, profile.filingStatus, propState)
+      // propMonthlyHousing already set above from prop.monthlyHousing || currMonthlyHousing
+
+    } else if (scenario.type === "child") {
+      // Housing unchanged; income may be partially reduced for parental leave (already blended in builder)
+      const leaveIncome = Number(prop.leaveIncome) || currIncome
+      const blendedAnnualIncome = leaveIncome * 0.25 + currIncome * 0.75
+      propTakeHome = calculateMonthlyTakeHome(blendedAnnualIncome, profile.filingStatus, currState)
+      propMonthlyHousing = currMonthlyHousing // housing doesn't change when having a baby
+      const monthlyChildcare = Number(prop.monthlyChildcare) || 0
+      const monthlyExtras = Number(prop.monthlyExtras) || 0
+      propScenarioCosts = monthlyChildcare + monthlyExtras
+
+    } else if (scenario.type === "school") {
+      const incomeWhileInSchool = Number(prop.incomeWhileInSchool) || 0
+      const annualTuition = Number(prop.annualTuition) || 0
+      const salaryAfter = Number(prop.salaryAfter) || currIncome
+      const durationYears = Number(prop.durationYears) || 2
+
+      const takeHomeInSchool = calculateMonthlyTakeHome(incomeWhileInSchool, profile.filingStatus, currState)
+      const takeHomeAfter = calculateMonthlyTakeHome(salaryAfter, profile.filingStatus, currState)
+      const monthlyTuition = annualTuition / 12
+      const totalYears = 30
+      const schoolWeight = Math.min(durationYears, totalYears) / totalYears
+      const afterWeight = 1 - schoolWeight
+      propTakeHome = takeHomeInSchool * schoolWeight + takeHomeAfter * afterWeight
+      propMonthlyHousing = currMonthlyHousing
+      propScenarioCosts = monthlyTuition * schoolWeight
+
+    } else if (scenario.type === "time-off") {
+      const months = Number(prop.months) || 6
+      const partTimeIncome = Number(prop.partTimeIncome) || 0
+      const extraMonthlyCost = Number(prop.extraMonthlyCost) || 0
+      const salaryAfter = Number(prop.salaryAfter) || currIncome
+
+      const takeHomeTimeOff = calculateMonthlyTakeHome(partTimeIncome, profile.filingStatus, currState)
+      const takeHomeAfter = calculateMonthlyTakeHome(salaryAfter, profile.filingStatus, currState)
+      const totalMonths = 30 * 12
+      const offWeight = months / totalMonths
+      const afterWeight = 1 - offWeight
+      propTakeHome = takeHomeTimeOff * offWeight + takeHomeAfter * afterWeight
+      propMonthlyHousing = currMonthlyHousing
+      propScenarioCosts = extraMonthlyCost * offWeight
     }
 
-    const otherExpenses = profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses
-    const currSurplus = currTakeHome - currMonthlyHousing - otherExpenses
-    const propSurplus = propTakeHome - propMonthlyHousing - otherExpenses
+    const propSurplus = propTakeHome - propMonthlyHousing - otherExpenses - propScenarioCosts
 
-    // What-If adjusted surplus: income boost at ~72% take-home rate + direct savings boost
+    // What-If adjusted surplus
     const whatIfExtraTakeHome = (whatIf.incomeBoost / 12) * 0.72
     const whatIfSurplus = propSurplus + whatIfExtraTakeHome + whatIf.savingsBoost
 
@@ -127,13 +178,19 @@ export default function ScenarioDetailPage() {
       profile.emergencyFund + profile.retirementBalance + profile.otherInvestments -
       (profile.creditCardDebt + profile.studentLoans + profile.carLoans + profile.otherDebt)
 
+    // Rule of 25: retirement target = 25× annual expenses
+    const currAnnualExpenses = (currMonthlyHousing + otherExpenses) * 12
+    const propAnnualExpenses = (propMonthlyHousing + otherExpenses + propScenarioCosts) * 12
+    const retirementTargetCurr = calculateRetirementTarget(currAnnualExpenses / 12)
+    const retirementTargetProp = calculateRetirementTarget(propAnnualExpenses / 12)
+
     const projCurr = projectNetWorth(startNetWorth, currSurplus, projYears)
     const projProp = projectNetWorth(startNetWorth, propSurplus, projYears)
     const projWhatIf = projectNetWorth(startNetWorth, whatIfSurplus, projYears)
 
-    const retireCurr = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, currSurplus))
-    const retireProp = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, propSurplus))
-    const retireWhatIf = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, whatIfSurplus))
+    const retireCurr = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, currSurplus), retirementTargetCurr)
+    const retireProp = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, propSurplus), retirementTargetProp)
+    const retireWhatIf = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, whatIfSurplus), retirementTargetProp)
 
     const diff20 = (projProp[Math.min(20, projProp.length - 1)]?.netWorth ?? 0) - (projCurr[Math.min(20, projCurr.length - 1)]?.netWorth ?? 0)
     const diff30WhatIf = (projWhatIf[projWhatIf.length - 1]?.netWorth ?? 0) - (projProp[projProp.length - 1]?.netWorth ?? 0)
@@ -158,9 +215,10 @@ export default function ScenarioDetailPage() {
     })
 
     return {
-      currTakeHome, propTakeHome, currMonthlyHousing, propMonthlyHousing,
+      currTakeHome, propTakeHome, currMonthlyHousing, propMonthlyHousing, propScenarioCosts,
       currSurplus, propSurplus, whatIfSurplus, whatIfExtraTakeHome,
       retireCurr, retireProp, retireWhatIf,
+      retirementTargetCurr, retirementTargetProp,
       diff20, diff30WhatIf, propWins,
       projData, otherExpenses,
       opportunityCostFV, surplusDiff,
@@ -310,6 +368,7 @@ export default function ScenarioDetailPage() {
                       { label: "Take-home/mo", curr: analysis.currTakeHome, prop: analysis.propTakeHome },
                       { label: "Housing/mo", curr: analysis.currMonthlyHousing, prop: analysis.propMonthlyHousing },
                       { label: "Other expenses", curr: analysis.otherExpenses, prop: null },
+                      ...(analysis.propScenarioCosts > 0 ? [{ label: "Scenario costs", curr: 0, prop: analysis.propScenarioCosts }] : []),
                     ].map(row => (
                       <tr key={row.label} className="text-gray-700">
                         <td className="py-2 text-gray-400 text-xs">{row.label}</td>
@@ -341,6 +400,7 @@ export default function ScenarioDetailPage() {
                   {[
                     { icon: Clock, label: "Retire (current path)", value: `Age ${analysis.retireCurr}`, highlight: false },
                     { icon: Clock, label: "Retire (new scenario)", value: `Age ${analysis.retireProp}`, highlight: analysis.retireProp < analysis.retireCurr },
+                    { icon: PiggyBank, label: "Retirement target", value: formatCurrency(analysis.retirementTargetProp, true), highlight: false },
                     { icon: PiggyBank, label: "20-yr net worth delta", value: formatCurrency(analysis.diff20), highlight: analysis.diff20 > 0 },
                   ].map(m => (
                     <div key={m.label} className="flex items-center justify-between">
@@ -361,7 +421,7 @@ export default function ScenarioDetailPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="font-bold text-[#1A1A2E] text-sm">Net Worth Projection</h2>
-                    <p className="text-xs text-gray-400">7% avg annual return assumed</p>
+                    <p className="text-xs text-gray-400">7% avg return · Retirement target = 25× annual expenses</p>
                   </div>
                   <div className="flex gap-1">
                     {([10, 20, 30] as const).map(y => (

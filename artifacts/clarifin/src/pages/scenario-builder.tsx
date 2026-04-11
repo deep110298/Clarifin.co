@@ -13,6 +13,7 @@ import type { ScenarioType, Scenario } from "@/lib/store";
 import {
   calculateMonthlyTakeHome,
   calculateMortgagePayment,
+  calculateRetirementTarget,
   projectNetWorth,
   estimateRetirementAge,
   CITY_COL,
@@ -43,15 +44,17 @@ const US_STATES = [
 interface FieldProps {
   label: string;
   prefix?: string;
+  suffix?: string;
   value: number | string;
   onChange: (v: string) => void;
   type?: "number" | "select" | "text";
   options?: string[];
   placeholder?: string;
   min?: number;
+  helpText?: string;
 }
 
-function Field({ label, prefix, value, onChange, type = "number", options, placeholder, min }: FieldProps) {
+function Field({ label, prefix, suffix, value, onChange, type = "number", options, placeholder, min, helpText }: FieldProps) {
   if (type === "select") {
     return (
       <div>
@@ -63,6 +66,7 @@ function Field({ label, prefix, value, onChange, type = "number", options, place
         >
           {options?.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
+        {helpText && <p className="text-[11px] text-gray-400 mt-1">{helpText}</p>}
       </div>
     );
   }
@@ -82,10 +86,14 @@ function Field({ label, prefix, value, onChange, type = "number", options, place
           placeholder={placeholder}
           className={cn(
             "w-full border border-gray-200 rounded-lg py-2 text-sm text-[#1A1A2E] bg-white focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15]",
-            prefix ? "pl-7 pr-3" : "px-3"
+            prefix ? "pl-7 pr-3" : suffix ? "pl-3 pr-10" : "px-3"
           )}
         />
+        {suffix && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">{suffix}</span>
+        )}
       </div>
+      {helpText && <p className="text-[11px] text-gray-400 mt-1">{helpText}</p>}
     </div>
   );
 }
@@ -101,20 +109,18 @@ function JobChangeFields({
 }) {
   return (
     <div className="grid grid-cols-2 gap-6">
-      {/* Current */}
       <div className="space-y-3">
         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Current Situation</h3>
         <Field label="Annual Salary" prefix="$" value={curr.income} onChange={(v) => setCurr("income", v)} min={0} />
         <Field label="City" type="select" options={CITIES} value={curr.city as string} onChange={(v) => setCurr("city", v)} />
-        <Field label="Monthly Rent" prefix="$" value={curr.housing} onChange={(v) => setCurr("housing", v)} min={0} />
+        <Field label="Monthly Housing Cost" prefix="$" value={curr.housing} onChange={(v) => setCurr("housing", v)} min={0} helpText="Rent or mortgage payment" />
         <Field label="State (for taxes)" type="select" options={US_STATES} value={curr.state as string} onChange={(v) => setCurr("state", v)} />
       </div>
-      {/* Proposed */}
       <div className="space-y-3">
         <h3 className="text-xs font-semibold text-[#1A1A2E] uppercase tracking-wide">New Scenario</h3>
         <Field label="New Salary" prefix="$" value={prop.income} onChange={(v) => setProp("income", v)} min={0} />
         <Field label="New City" type="select" options={CITIES} value={prop.city as string} onChange={(v) => setProp("city", v)} />
-        <Field label="New Monthly Rent" prefix="$" value={prop.housing} onChange={(v) => setProp("housing", v)} min={0} />
+        <Field label="New Monthly Housing Cost" prefix="$" value={prop.housing} onChange={(v) => setProp("housing", v)} min={0} helpText="Rent or mortgage in new location" />
         <Field label="State (for taxes)" type="select" options={US_STATES} value={prop.state as string} onChange={(v) => setProp("state", v)} />
         <Field label="One-time Moving Cost" prefix="$" value={prop.movingCost} onChange={(v) => setProp("movingCost", v)} min={0} />
       </div>
@@ -143,9 +149,163 @@ function BuyHomeFields({
         <h3 className="text-xs font-semibold text-[#1A1A2E] uppercase tracking-wide">New Scenario (Buying)</h3>
         <Field label="Home Purchase Price" prefix="$" value={prop.homePrice} onChange={(v) => setProp("homePrice", v)} min={0} />
         <Field label="Down Payment" prefix="$" value={prop.downPayment} onChange={(v) => setProp("downPayment", v)} min={0} />
-        <Field label="Mortgage Rate (%)" value={prop.mortgageRate} onChange={(v) => setProp("mortgageRate", v)} min={0} />
+        <Field label="Mortgage Rate (%)" value={prop.mortgageRate} onChange={(v) => setProp("mortgageRate", v)} min={0} helpText="Current 30-yr avg ~6.8%" />
         <Field label="Loan Term" type="select" options={["30", "15"]} value={prop.loanTerm as string} onChange={(v) => setProp("loanTerm", v)} />
         <Field label="Annual Property Tax" prefix="$" value={prop.propertyTax} onChange={(v) => setProp("propertyTax", v)} min={0} />
+      </div>
+    </div>
+  );
+}
+
+// ── Child fields ───────────────────────────────────────────────────────────
+function ChildFields({
+  prop, setProp,
+}: {
+  prop: Record<string, string | number>;
+  setProp: (k: string, v: string) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+        <p className="font-semibold mb-1">How this works</p>
+        <p className="text-xs text-blue-600">Your income and housing stay the same. We add your estimated child costs to calculate how much less you can save each month — and what that means for your retirement timeline.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Field
+          label="Monthly Childcare / Daycare"
+          prefix="$"
+          value={prop.monthlyChildcare}
+          onChange={(v) => setProp("monthlyChildcare", v)}
+          min={0}
+          helpText="US avg: $1,200–$2,200/mo depending on city"
+        />
+        <Field
+          label="Monthly Baby Essentials"
+          prefix="$"
+          value={prop.monthlyExtras}
+          onChange={(v) => setProp("monthlyExtras", v)}
+          min={0}
+          helpText="Diapers, formula, clothing, gear (~$400–$800/mo)"
+        />
+        <Field
+          label="One-time Birth / Setup Cost"
+          prefix="$"
+          value={prop.oneTimeCost}
+          onChange={(v) => setProp("oneTimeCost", v)}
+          min={0}
+          helpText="Hospital, nursery, stroller, car seat, etc."
+        />
+        <Field
+          label="Income During Parental Leave"
+          prefix="$"
+          value={prop.leaveIncome}
+          onChange={(v) => setProp("leaveIncome", v)}
+          min={0}
+          helpText="Annual equivalent during leave period"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ── School fields ──────────────────────────────────────────────────────────
+function SchoolFields({
+  curr, prop, setProp,
+}: {
+  curr: Record<string, string | number>;
+  prop: Record<string, string | number>;
+  setProp: (k: string, v: string) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 text-sm text-purple-800">
+        <p className="font-semibold mb-1">How this works</p>
+        <p className="text-xs text-purple-600">During school your income drops and you pay tuition. After graduation your salary increases. We model both phases to show your true long-run financial impact.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Field
+          label="Annual Tuition"
+          prefix="$"
+          value={prop.annualTuition}
+          onChange={(v) => setProp("annualTuition", v)}
+          min={0}
+          helpText="Total yearly cost including fees"
+        />
+        <Field
+          label="Program Length"
+          suffix="yrs"
+          value={prop.durationYears}
+          onChange={(v) => setProp("durationYears", v)}
+          min={1}
+          helpText="How many years in school"
+        />
+        <Field
+          label="Income During School"
+          prefix="$"
+          value={prop.incomeWhileInSchool}
+          onChange={(v) => setProp("incomeWhileInSchool", v)}
+          min={0}
+          helpText="Part-time / 0 if full-time student"
+        />
+        <Field
+          label="Expected Salary After Graduation"
+          prefix="$"
+          value={prop.salaryAfter}
+          onChange={(v) => setProp("salaryAfter", v)}
+          min={0}
+          helpText={`Your current: ${formatCurrency(Number(curr.income))}/yr`}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ── Time-off fields ────────────────────────────────────────────────────────
+function TimeOffFields({
+  prop, setProp,
+}: {
+  prop: Record<string, string | number>;
+  setProp: (k: string, v: string) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 text-sm text-orange-800">
+        <p className="font-semibold mb-1">How this works</p>
+        <p className="text-xs text-orange-600">During your time off, your expenses continue but income stops or drops significantly. We model the savings depletion and show how long it takes to recover financially after you return to work.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Field
+          label="Duration"
+          suffix="months"
+          value={prop.months}
+          onChange={(v) => setProp("months", v)}
+          min={1}
+          helpText="How long will you be off work?"
+        />
+        <Field
+          label="Income During Time Off"
+          prefix="$"
+          value={prop.partTimeIncome}
+          onChange={(v) => setProp("partTimeIncome", v)}
+          min={0}
+          helpText="Annual equivalent — enter 0 if full break"
+        />
+        <Field
+          label="Monthly Travel / Extra Costs"
+          prefix="$"
+          value={prop.extraMonthlyCost}
+          onChange={(v) => setProp("extraMonthlyCost", v)}
+          min={0}
+          helpText="Above your normal expenses"
+        />
+        <Field
+          label="Expected Salary When You Return"
+          prefix="$"
+          value={prop.salaryAfter}
+          onChange={(v) => setProp("salaryAfter", v)}
+          min={0}
+          helpText="Could be same or different"
+        />
       </div>
     </div>
   );
@@ -167,11 +327,16 @@ function getDefaultState(type: ScenarioType, profile: { grossIncome: number; hou
   } else if (type === "buy-home") {
     prop = { homePrice: 450000, downPayment: 90000, mortgageRate: 6.8, loanTerm: "30", propertyTax: 6000 };
   } else if (type === "school") {
-    prop = { tuition: 25000, durationYears: 2, incomeLoss: Math.round(profile.grossIncome * 0.5) };
+    prop = {
+      annualTuition: 25000,
+      durationYears: 2,
+      incomeWhileInSchool: Math.round(profile.grossIncome * 0.3),
+      salaryAfter: Math.round(profile.grossIncome * 1.4),
+    };
   } else if (type === "child") {
-    prop = { firstYearCost: 20000, annualOngoing: 15000 };
+    prop = { monthlyChildcare: 1500, monthlyExtras: 500, oneTimeCost: 15000, leaveIncome: Math.round(profile.grossIncome * 0.6) };
   } else if (type === "time-off") {
-    prop = { months: 6, monthlyCost: Math.round(profile.housing * 1.2) };
+    prop = { months: 6, partTimeIncome: 0, extraMonthlyCost: 500, salaryAfter: profile.grossIncome };
   } else {
     prop = { income: profile.grossIncome, housing: profile.housing };
   }
@@ -210,41 +375,116 @@ export default function ScenarioBuilderPage() {
   // ── Compute comparison ────────────────────────────────────────────────────
   const analysis = useMemo(() => {
     const currIncome = Number(curr.income) || 0;
-    const propIncome = Number(prop.income) || currIncome;
     const currState = (curr.state as string) || profile.state;
-    const propState = (prop.state as string) || currState;
+    const otherExpenses = profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses;
 
     const currTakeHome = calculateMonthlyTakeHome(currIncome, profile.filingStatus, currState);
-    const propTakeHome = calculateMonthlyTakeHome(propIncome, profile.filingStatus, propState);
+    const currMonthlyHousing = Number(curr.housing) || profile.housing;
+    const currSurplus = currTakeHome - currMonthlyHousing - otherExpenses;
 
-    let currMonthlyHousing = Number(curr.housing) || 0;
-    let propMonthlyHousing = 0;
+    let propTakeHome = currTakeHome;
+    let propMonthlyHousing = currMonthlyHousing; // default: housing unchanged
+    let propScenarioCosts = 0; // extra monthly costs specific to this scenario
+    let propSurplus = 0;
 
-    if (scenarioType === "buy-home") {
+    if (scenarioType === "job-change") {
+      const propIncome = Number(prop.income) || currIncome;
+      const propState = (prop.state as string) || currState;
+      propTakeHome = calculateMonthlyTakeHome(propIncome, profile.filingStatus, propState);
+      propMonthlyHousing = Number(prop.housing) || currMonthlyHousing;
+      propSurplus = propTakeHome - propMonthlyHousing - otherExpenses;
+
+    } else if (scenarioType === "buy-home") {
       const homePrice = Number(prop.homePrice) || 0;
       const down = Number(prop.downPayment) || 0;
       const rate = (Number(prop.mortgageRate) || 6.8) / 100;
       const term = Number(prop.loanTerm) || 30;
       const propertyTax = (Number(prop.propertyTax) || 0) / 12;
       const mortgage = calculateMortgagePayment(homePrice - down, rate, term);
-      propMonthlyHousing = mortgage + propertyTax + (homePrice * 0.01) / 12; // est. maintenance
-    } else {
-      propMonthlyHousing = Number(prop.housing) || 0;
-    }
+      const maintenance = (homePrice * 0.01) / 12;
+      propMonthlyHousing = mortgage + propertyTax + maintenance;
+      // Income and state same as current when buying
+      propSurplus = currTakeHome - propMonthlyHousing - otherExpenses;
 
-    const otherExpenses = profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses;
-    const currSurplus = currTakeHome - currMonthlyHousing - otherExpenses;
-    const propSurplus = propTakeHome - propMonthlyHousing - otherExpenses;
+    } else if (scenarioType === "child") {
+      // Housing and income stay the same (unless on parental leave)
+      const leaveIncome = Number(prop.leaveIncome) || 0;
+      // Use average of leave year and normal year for steady-state approximation
+      // (first ~3 months leave, then back to work for most people)
+      const blendedAnnualIncome = leaveIncome * 0.25 + currIncome * 0.75;
+      propTakeHome = calculateMonthlyTakeHome(blendedAnnualIncome, profile.filingStatus, currState);
+      const monthlyChildcare = Number(prop.monthlyChildcare) || 0;
+      const monthlyExtras = Number(prop.monthlyExtras) || 0;
+      propScenarioCosts = monthlyChildcare + monthlyExtras;
+      propSurplus = propTakeHome - currMonthlyHousing - otherExpenses - propScenarioCosts;
+
+    } else if (scenarioType === "school") {
+      // Two-phase: during school income drops, tuition added; after school income rises
+      // We show a blended view: half the projection period in school, half after
+      const incomeWhileInSchool = Number(prop.incomeWhileInSchool) || 0;
+      const annualTuition = Number(prop.annualTuition) || 0;
+      const salaryAfter = Number(prop.salaryAfter) || currIncome;
+      const durationYears = Number(prop.durationYears) || 2;
+
+      const takeHomeInSchool = calculateMonthlyTakeHome(incomeWhileInSchool, profile.filingStatus, currState);
+      const takeHomeAfter = calculateMonthlyTakeHome(salaryAfter, profile.filingStatus, currState);
+      const monthlyTuition = annualTuition / 12;
+
+      const surplusInSchool = takeHomeInSchool - currMonthlyHousing - otherExpenses - monthlyTuition;
+      const surplusAfter = takeHomeAfter - currMonthlyHousing - otherExpenses;
+
+      // Blend for the 30-year view: weight by years
+      const totalYears = 30;
+      const schoolWeight = Math.min(durationYears, totalYears) / totalYears;
+      const afterWeight = 1 - schoolWeight;
+      propTakeHome = takeHomeInSchool * schoolWeight + takeHomeAfter * afterWeight;
+      propScenarioCosts = monthlyTuition * schoolWeight; // only paid during school
+      propSurplus = surplusInSchool * schoolWeight + surplusAfter * afterWeight;
+
+    } else if (scenarioType === "time-off") {
+      const months = Number(prop.months) || 6;
+      const partTimeIncome = Number(prop.partTimeIncome) || 0;
+      const extraMonthlyCost = Number(prop.extraMonthlyCost) || 0;
+      const salaryAfter = Number(prop.salaryAfter) || currIncome;
+
+      const takeHomeTimeOff = calculateMonthlyTakeHome(partTimeIncome, profile.filingStatus, currState);
+      const takeHomeAfter = calculateMonthlyTakeHome(salaryAfter, profile.filingStatus, currState);
+
+      const surplusTimeOff = takeHomeTimeOff - currMonthlyHousing - otherExpenses - extraMonthlyCost;
+      const surplusAfter = takeHomeAfter - currMonthlyHousing - otherExpenses;
+
+      // Blend for 30-year view
+      const totalMonths = 30 * 12;
+      const offWeight = months / totalMonths;
+      const afterWeight = 1 - offWeight;
+      propTakeHome = takeHomeTimeOff * offWeight + takeHomeAfter * afterWeight;
+      propScenarioCosts = extraMonthlyCost * offWeight;
+      propSurplus = surplusTimeOff * offWeight + surplusAfter * afterWeight;
+
+    } else {
+      // custom
+      const propIncome = Number(prop.income) || currIncome;
+      const propState = (prop.state as string) || currState;
+      propTakeHome = calculateMonthlyTakeHome(propIncome, profile.filingStatus, propState);
+      propMonthlyHousing = Number(prop.housing) || currMonthlyHousing;
+      propSurplus = propTakeHome - propMonthlyHousing - otherExpenses;
+    }
 
     const startNetWorth =
       profile.emergencyFund + profile.retirementBalance + profile.otherInvestments -
       (profile.creditCardDebt + profile.studentLoans + profile.carLoans + profile.otherDebt);
 
+    // Rule of 25: retirement target = 25× annual expenses
+    const currAnnualExpenses = (currMonthlyHousing + otherExpenses) * 12;
+    const propAnnualExpenses = (propMonthlyHousing + otherExpenses + propScenarioCosts) * 12;
+    const retirementTargetCurr = calculateRetirementTarget(currAnnualExpenses / 12);
+    const retirementTargetProp = calculateRetirementTarget(propAnnualExpenses / 12);
+
     const projCurr = projectNetWorth(startNetWorth, currSurplus, 30);
     const projProp = projectNetWorth(startNetWorth, propSurplus, 30);
 
-    const retireCurr = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, currSurplus));
-    const retireProp = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, propSurplus));
+    const retireCurr = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, currSurplus), retirementTargetCurr);
+    const retireProp = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, propSurplus), retirementTargetProp);
 
     const diff20yr = (projProp[20]?.netWorth ?? 0) - (projCurr[20]?.netWorth ?? 0);
     const propWins = propSurplus >= currSurplus;
@@ -260,24 +500,27 @@ export default function ScenarioBuilderPage() {
       propTakeHome,
       currMonthlyHousing,
       propMonthlyHousing,
+      propScenarioCosts,
       currSurplus,
       propSurplus,
       retireCurr,
       retireProp,
+      retirementTargetCurr,
+      retirementTargetProp,
       diff20yr,
       propWins,
       projData,
+      otherExpenses,
     };
   }, [curr, prop, profile, scenarioType]);
 
-  // ── Save mutation (Bug 3 fix) ─────────────────────────────────────────────
+  // ── Save mutation ─────────────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async () => {
-      // Build current and proposed objects with all relevant fields
       const currentObj: Record<string, unknown> = {
         income: Number(curr.income),
         city: curr.city as string,
-        monthlyHousing: Number(curr.housing) || 0,
+        monthlyHousing: analysis.currMonthlyHousing,
         state: curr.state as string,
       };
 
@@ -286,6 +529,7 @@ export default function ScenarioBuilderPage() {
         city: (prop.city ?? curr.city) as string,
         monthlyHousing: analysis.propMonthlyHousing,
         state: (prop.state ?? curr.state) as string,
+        scenarioCosts: analysis.propScenarioCosts,
       };
 
       if (scenarioType === "buy-home") {
@@ -295,21 +539,36 @@ export default function ScenarioBuilderPage() {
         proposedObj.loanTermYears = Number(prop.loanTerm) || 30;
         proposedObj.propertyTax = Number(prop.propertyTax) || 0;
       }
-
       if (scenarioType === "job-change") {
         proposedObj.movingCost = Number(prop.movingCost) || 0;
       }
-
-      const body = {
-        name: scenarioName,
-        type: scenarioType,
-        current: currentObj,
-        proposed: proposedObj,
-      };
+      if (scenarioType === "child") {
+        proposedObj.monthlyChildcare = Number(prop.monthlyChildcare) || 0;
+        proposedObj.monthlyExtras = Number(prop.monthlyExtras) || 0;
+        proposedObj.oneTimeCost = Number(prop.oneTimeCost) || 0;
+        proposedObj.leaveIncome = Number(prop.leaveIncome) || 0;
+      }
+      if (scenarioType === "school") {
+        proposedObj.annualTuition = Number(prop.annualTuition) || 0;
+        proposedObj.durationYears = Number(prop.durationYears) || 2;
+        proposedObj.incomeWhileInSchool = Number(prop.incomeWhileInSchool) || 0;
+        proposedObj.salaryAfter = Number(prop.salaryAfter) || 0;
+      }
+      if (scenarioType === "time-off") {
+        proposedObj.months = Number(prop.months) || 6;
+        proposedObj.partTimeIncome = Number(prop.partTimeIncome) || 0;
+        proposedObj.extraMonthlyCost = Number(prop.extraMonthlyCost) || 0;
+        proposedObj.salaryAfter = Number(prop.salaryAfter) || 0;
+      }
 
       return customFetch<Scenario>("/api/scenarios", {
         method: "POST",
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          name: scenarioName,
+          type: scenarioType,
+          current: currentObj,
+          proposed: proposedObj,
+        }),
       });
     },
     onSuccess: (savedScenario) => {
@@ -373,16 +632,21 @@ export default function ScenarioBuilderPage() {
           {scenarioType === "buy-home" && (
             <BuyHomeFields curr={curr} setCurr={setCurr} prop={prop} setProp={setProp} />
           )}
-          {(scenarioType === "school" || scenarioType === "child" || scenarioType === "time-off" || scenarioType === "custom") && (
-            <div className="text-center py-8 text-gray-400">
-              <Sliders className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Custom scenario inputs — fill in the details below</p>
-              <div className="grid grid-cols-2 gap-4 mt-6 text-left max-w-md mx-auto">
-                <Field label="Current Annual Income" prefix="$" value={curr.income} onChange={(v) => setCurr("income", v)} />
-                <Field label="New Annual Income" prefix="$" value={prop.income ?? curr.income} onChange={(v) => setProp("income", v)} />
-                <Field label="Current Monthly Housing" prefix="$" value={curr.housing} onChange={(v) => setCurr("housing", v)} />
-                <Field label="New Monthly Housing" prefix="$" value={prop.housing ?? curr.housing} onChange={(v) => setProp("housing", v)} />
-              </div>
+          {scenarioType === "child" && (
+            <ChildFields prop={prop} setProp={setProp} />
+          )}
+          {scenarioType === "school" && (
+            <SchoolFields curr={curr} prop={prop} setProp={setProp} />
+          )}
+          {scenarioType === "time-off" && (
+            <TimeOffFields prop={prop} setProp={setProp} />
+          )}
+          {scenarioType === "custom" && (
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Current Annual Income" prefix="$" value={curr.income} onChange={(v) => setCurr("income", v)} />
+              <Field label="New Annual Income" prefix="$" value={prop.income ?? curr.income} onChange={(v) => setProp("income", v)} />
+              <Field label="Current Monthly Housing" prefix="$" value={curr.housing} onChange={(v) => setCurr("housing", v)} />
+              <Field label="New Monthly Housing" prefix="$" value={prop.housing ?? curr.housing} onChange={(v) => setProp("housing", v)} />
             </div>
           )}
         </div>
@@ -404,7 +668,8 @@ export default function ScenarioBuilderPage() {
                 {[
                   { label: "Take-home/mo", curr: analysis.currTakeHome, prop: analysis.propTakeHome },
                   { label: "Housing/mo", curr: analysis.currMonthlyHousing, prop: analysis.propMonthlyHousing },
-                  { label: "Other expenses", curr: profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses, prop: null },
+                  { label: "Other expenses", curr: analysis.otherExpenses, prop: null },
+                  ...(analysis.propScenarioCosts > 0 ? [{ label: "Scenario costs", curr: 0, prop: analysis.propScenarioCosts }] : []),
                 ].map((row) => {
                   const diff = row.prop !== null ? row.prop - row.curr : null;
                   return (
@@ -435,13 +700,21 @@ export default function ScenarioBuilderPage() {
               </tfoot>
             </table>
 
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-2 pt-3 border-t border-gray-100">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">Retirement age (current)</span>
+                <span className="text-gray-500">Retirement target (current)</span>
+                <span className="font-semibold text-[#1A1A2E]">{formatCurrency(analysis.retirementTargetCurr, true)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Retirement target (new)</span>
+                <span className="font-semibold text-gray-500">{formatCurrency(analysis.retirementTargetProp, true)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Retire age (current path)</span>
                 <span className="font-semibold text-[#1A1A2E]">Age {analysis.retireCurr}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">Retirement age (new)</span>
+                <span className="text-gray-500">Retire age (new scenario)</span>
                 <span className="font-semibold" style={{ color: analysis.retireProp <= analysis.retireCurr ? "#22C55E" : "#ef4444" }}>
                   Age {analysis.retireProp}
                 </span>
@@ -452,7 +725,7 @@ export default function ScenarioBuilderPage() {
           {/* Projection chart */}
           <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h2 className="font-semibold text-[#1A1A2E] mb-1 text-sm">30-Year Net Worth Projection</h2>
-            <p className="text-xs text-gray-400 mb-4">7% avg annual return</p>
+            <p className="text-xs text-gray-400 mb-4">7% avg annual return · Retirement target = 25× annual expenses</p>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={analysis.projData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                 <defs>
@@ -512,7 +785,6 @@ export default function ScenarioBuilderPage() {
           </div>
         </div>
 
-        {/* Error state */}
         {saveError && (
           <p className="text-sm text-red-500">{saveError}</p>
         )}

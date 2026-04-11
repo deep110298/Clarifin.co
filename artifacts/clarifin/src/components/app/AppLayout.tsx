@@ -7,6 +7,8 @@ import logoImg from "@/assets/logo.png";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "./UserAvatar";
+import { customFetch } from "@workspace/api-client-react";
+import { useState } from "react";
 
 const NAV = [
   { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -19,6 +21,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
   const { user } = useUser();
   const { signOut } = useClerk();
+  const [upgrading, setUpgrading] = useState(false);
+
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    try {
+      const { url } = await customFetch<{ url: string }>("/api/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ plan: "plus" }),
+      });
+      window.location.href = url;
+    } catch {
+      setUpgrading(false);
+    }
+  };
 
   const displayName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
@@ -83,10 +99,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <p className="text-xs text-white/60 mb-1">Want unlimited scenarios?</p>
           <p className="text-sm font-semibold mb-3">Upgrade to Plus</p>
           <button
-            onClick={() => navigate("/app/profile")}
-            className="w-full bg-[#FACC15] text-[#1A1A2E] text-xs font-bold py-2 rounded-lg hover:bg-yellow-300 transition-colors"
+            onClick={handleUpgrade}
+            disabled={upgrading}
+            className="w-full bg-[#FACC15] text-[#1A1A2E] text-xs font-bold py-2 rounded-lg hover:bg-yellow-300 transition-colors disabled:opacity-60"
           >
-            Upgrade to Pro
+            {upgrading ? "Loading..." : "Upgrade to Pro"}
           </button>
         </div>
 

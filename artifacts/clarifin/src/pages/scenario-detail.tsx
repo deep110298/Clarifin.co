@@ -7,7 +7,7 @@ import {
 } from "recharts"
 import {
   ArrowLeft, Trash2, TrendingUp, TrendingDown, Award, AlertCircle,
-  Clock, PiggyBank, DollarSign, Zap, SlidersHorizontal, Sparkles,
+  Clock, PiggyBank, DollarSign, Zap, SlidersHorizontal, Sparkles, Pencil,
 } from "lucide-react"
 import { AppLayout } from "@/components/app/AppLayout"
 import {
@@ -73,6 +73,8 @@ export default function ScenarioDetailPage() {
   const [projYears, setProjYears] = useState<10 | 20 | 30>(30)
   const [whatIf, setWhatIf] = useState({ incomeBoost: 0, savingsBoost: 0 })
   const [showWhatIf, setShowWhatIf] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState("")
 
   const { data: scenario, isLoading, isError } = useQuery({
     queryKey: ["scenario", id],
@@ -87,6 +89,27 @@ export default function ScenarioDetailPage() {
       navigate("/app/scenarios")
     },
   })
+
+  const renameMutation = useMutation({
+    mutationFn: (name: string) =>
+      customFetch(`/api/scenarios/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["scenario", id] })
+      qc.invalidateQueries({ queryKey: ["scenarios"] })
+      setEditingName(false)
+    },
+  })
+
+  const startRename = () => {
+    setNameInput(scenario?.name ?? "")
+    setEditingName(true)
+  }
+
+  const submitRename = () => {
+    const trimmed = nameInput.trim()
+    if (trimmed && trimmed !== scenario?.name) renameMutation.mutate(trimmed)
+    else setEditingName(false)
+  }
 
   const analysis = useMemo(() => {
     if (!scenario) return null
@@ -262,7 +285,21 @@ export default function ScenarioDetailPage() {
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-[#1A1A2E]">{scenario.name}</h1>
+                {editingName ? (
+                  <input
+                    autoFocus
+                    value={nameInput}
+                    onChange={e => setNameInput(e.target.value)}
+                    onBlur={submitRename}
+                    onKeyDown={e => { if (e.key === "Enter") submitRename(); if (e.key === "Escape") setEditingName(false) }}
+                    className="text-2xl font-bold text-[#1A1A2E] border-b-2 border-[#FACC15] outline-none bg-transparent w-72"
+                  />
+                ) : (
+                  <button onClick={startRename} className="group flex items-center gap-1.5">
+                    <h1 className="text-2xl font-bold text-[#1A1A2E]">{scenario.name}</h1>
+                    <Pencil className="w-3.5 h-3.5 text-gray-300 group-hover:text-[#FACC15] transition-colors" />
+                  </button>
+                )}
                 <span className="text-xs bg-[#FFF9E6] text-[#1A1A2E] border border-yellow-200 px-2.5 py-0.5 rounded-full font-medium">
                   {TYPE_LABELS[scenario.type] ?? "Scenario"}
                 </span>

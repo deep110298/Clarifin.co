@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { Send, Sparkles, User, TrendingUp, DollarSign, Home, GraduationCap, RefreshCw } from "lucide-react";
 import { AppLayout } from "@/components/app/AppLayout";
+import { UserAvatar } from "@/components/app/UserAvatar";
 import { useStore } from "@/lib/store";
 import type { ChatMessage } from "@/lib/store";
 import { calculateMonthlyTakeHome, formatCurrency } from "@/lib/financial-engine";
@@ -256,9 +257,7 @@ export default function AdvisorPage() {
           {/* Profile summary */}
           <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#1A1A2E] flex items-center justify-center text-white font-bold">
-                D
-              </div>
+              <UserAvatar size="md" />
               <div>
                 <div className="text-sm font-semibold text-[#1A1A2E]">Your Profile</div>
                 <div className="text-xs text-gray-400">{profile.state} · {profile.filingStatus}</div>

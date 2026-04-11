@@ -6,6 +6,7 @@ import {
 import logoImg from "@/assets/logo.png";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "./UserAvatar";
 
 const NAV = [
   { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -124,9 +125,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 + Add new
               </button>
             </Link>
-            <div className="w-9 h-9 rounded-full bg-[#FACC15] flex items-center justify-center text-[#1A1A2E] text-sm font-bold">
-              {initials}
-            </div>
+            <Link href="/app/profile">
+              <UserAvatar size="md" className="cursor-pointer ring-2 ring-transparent hover:ring-[#FACC15] transition-all" />
+            </Link>
           </div>
         </header>
 

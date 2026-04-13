@@ -8,6 +8,8 @@ export const logger = pino({
     "req.headers.authorization",
     "req.headers.cookie",
     "res.headers['set-cookie']",
+    // Never log request bodies — they may contain PII (email, financial data)
+    "req.body",
   ],
   ...(isProduction
     ? {}

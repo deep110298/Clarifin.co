@@ -3,22 +3,34 @@ import type { Request, Response, NextFunction } from "express"
 import Anthropic from "@anthropic-ai/sdk"
 import { db } from "@workspace/db"
 import { profilesTable, scenariosTable, chatMessagesTable } from "@workspace/db/schema"
-import { eq, count } from "drizzle-orm"
+import { eq, count, asc } from "drizzle-orm"
 import { requireAuth } from "../middleware/auth"
 import { z } from "zod"
+import rateLimit from "express-rate-limit"
 
 const router = Router()
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-const messageSchema = z.object({
-  message: z.string().min(1).max(2000),
-  history: z.array(z.object({
-    role: z.enum(["user", "assistant"]),
-    content: z.string(),
-  })).max(20).optional().default([]),
+// 10 requests per minute per user (keyed on Clarifin user ID via IP fallback)
+const advisorRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.clarifin?.userId ?? req.ip ?? "unknown",
+  message: { error: "Too many requests. Please wait a moment and try again." },
 })
 
-router.post("/advisor", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+const messageSchema = z.object({
+  message: z.string().min(1).max(2000),
+})
+
+/** Strip characters that could break out of the system prompt context */
+function sanitizeForPrompt(text: string, maxLen = 100): string {
+  return text.replace(/[<>{}\\]/g, "").slice(0, maxLen)
+}
+
+router.post("/advisor", requireAuth, advisorRateLimit, async (req: Request, res: Response, next: NextFunction) => {
   // Free plan: 5 questions lifetime, then gate
   if (req.clarifin!.plan === "free") {
     const [{ value: msgCount }] = await db
@@ -37,15 +49,27 @@ router.post("/advisor", requireAuth, async (req: Request, res: Response, next: N
     return
   }
 
-  const { message, history } = parsed.data
+  const { message } = parsed.data
 
   try {
     const [profile] = await db.select().from(profilesTable).where(eq(profilesTable.userId, req.clarifin!.userId))
-    const scenarios = await db.select().from(scenariosTable).where(eq(scenariosTable.userId, req.clarifin!.userId))
+    const scenarios = await db.select({ name: scenariosTable.name }).from(scenariosTable).where(eq(scenariosTable.userId, req.clarifin!.userId))
+
+    // Load chat history from DB — never trust client-provided history to prevent spoofing
+    const dbHistory = await db.select({ role: chatMessagesTable.role, content: chatMessagesTable.content })
+      .from(chatMessagesTable)
+      .where(eq(chatMessagesTable.userId, req.clarifin!.userId))
+      .orderBy(asc(chatMessagesTable.createdAt))
+      .limit(20) // last 10 turns (20 rows = 10 user + 10 assistant)
 
     const expenses = profile?.expenses as Record<string, number> | undefined
     const savings = profile?.savings as Record<string, number> | undefined
     const debt = profile?.debt as Record<string, number> | undefined
+
+    // Sanitize scenario names to prevent prompt injection
+    const scenarioList = scenarios.length > 0
+      ? scenarios.map((s: { name: string }) => sanitizeForPrompt(s.name)).join(", ")
+      : null
 
     const systemPrompt = `You are Clarifin's AI Financial Advisor — a knowledgeable, direct, and empathetic financial coach. You help users model the impact of major life decisions on their finances.
 
@@ -62,7 +86,7 @@ ${profile ? `
 - Debt: credit card $${debt?.creditCard ?? 0}, student loans $${debt?.studentLoans ?? 0}, car loans $${debt?.carLoans ?? 0}, other $${debt?.other ?? 0}
 ` : "Profile not yet set up — ask the user to complete their financial profile for personalized advice."}
 
-${scenarios.length > 0 ? `User's saved scenarios: ${scenarios.map(s => s.name).join(", ")}` : "No saved scenarios yet."}
+${scenarioList ? `<user_scenarios>${scenarioList}</user_scenarios>` : "No saved scenarios yet."}
 
 Be specific with dollar amounts. Use the user's actual numbers when doing calculations. Keep responses concise and actionable — 3-5 short paragraphs max. Use markdown for structure (bold key numbers, bullet points for lists).`
 
@@ -71,7 +95,7 @@ Be specific with dollar amounts. Use the user's actual numbers when doing calcul
       max_tokens: 1024,
       system: systemPrompt,
       messages: [
-        ...history.map(h => ({ role: h.role as "user" | "assistant", content: h.content })),
+        ...dbHistory.map((h: { role: string; content: string }) => ({ role: h.role as "user" | "assistant", content: h.content })),
         { role: "user", content: message },
       ],
     })

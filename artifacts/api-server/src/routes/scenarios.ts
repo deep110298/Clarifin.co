@@ -8,11 +8,23 @@ import { z } from "zod"
 
 const router = Router()
 
+/** Limit JSONB blobs: max 50 keys, values must be finite numbers or short strings */
+const scenarioDataValue = z.union([
+  z.number().finite().min(-1_000_000_000).max(1_000_000_000),
+  z.string().max(500),
+  z.boolean(),
+  z.null(),
+])
+const scenarioData = z.record(z.string().max(100), scenarioDataValue).refine(
+  (obj) => Object.keys(obj).length <= 50,
+  { message: "Too many keys in scenario data" }
+)
+
 const scenarioBodySchema = z.object({
   name: z.string().min(1).max(200),
   type: z.enum(["job-change", "buy-home", "school", "child", "time-off", "custom"]),
-  current: z.record(z.unknown()),
-  proposed: z.record(z.unknown()),
+  current: scenarioData,
+  proposed: scenarioData,
 })
 
 // GET /api/scenarios

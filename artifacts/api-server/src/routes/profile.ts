@@ -8,30 +8,34 @@ import { z } from "zod"
 
 const router = Router()
 
+const MAX_DOLLAR = 100_000_000 // $100M — reasonable upper bound to block absurd values
+
+const dollar = z.number().finite().min(0).max(MAX_DOLLAR)
+
 const profileBodySchema = z.object({
-  grossIncome: z.number().min(0),
+  grossIncome: dollar,
   filingStatus: z.enum(["single", "married", "head"]),
-  state: z.string().length(2),
-  age: z.number().min(16).max(100),
+  state: z.string().length(2).regex(/^[A-Z]{2}$/),
+  age: z.number().int().min(16).max(100),
   expenses: z.object({
-    housing: z.number().min(0),
-    transport: z.number().min(0),
-    food: z.number().min(0),
-    utilities: z.number().min(0),
-    healthcare: z.number().min(0),
-    other: z.number().min(0),
+    housing: dollar,
+    transport: dollar,
+    food: dollar,
+    utilities: dollar,
+    healthcare: dollar,
+    other: dollar,
   }),
   savings: z.object({
-    emergency: z.number().min(0),
-    retirement: z.number().min(0),
-    monthlyContrib: z.number().min(0),
-    investments: z.number().min(0),
+    emergency: dollar,
+    retirement: dollar,
+    monthlyContrib: dollar,
+    investments: dollar,
   }),
   debt: z.object({
-    creditCard: z.number().min(0),
-    studentLoans: z.number().min(0),
-    carLoans: z.number().min(0),
-    other: z.number().min(0),
+    creditCard: dollar,
+    studentLoans: dollar,
+    carLoans: dollar,
+    other: dollar,
   }),
   isComplete: z.boolean().optional(),
 })

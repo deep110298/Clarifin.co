@@ -72,13 +72,24 @@ router.post("/webhooks/stripe", async (req: Request, res: Response) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.CheckoutSession
       const userId = session.metadata?.userId
-      const plan = session.metadata?.plan as "plus" | "advisor"
       const customerId = typeof session.customer === "string" ? session.customer : null
       const subscriptionId = typeof session.subscription === "string" ? session.subscription : null
+
+      // Validate the plan by looking up the actual price from Stripe — never trust metadata alone
+      let plan: "plus" | "advisor" | null = null
+      if (subscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId, { expand: ["items.data.price"] })
+        const priceId = subscription.items.data[0]?.price?.id
+        if (priceId === PLAN_PRICES.plus) plan = "plus"
+        else if (priceId === PLAN_PRICES.advisor) plan = "advisor"
+      }
+
       if (userId && plan && customerId) {
         await db.update(usersTable)
           .set({ plan, stripeCustomerId: customerId, stripeSubscriptionId: subscriptionId, updatedAt: new Date() })
           .where(eq(usersTable.id, userId))
+      } else {
+        logger.warn({ userId, plan, customerId, subscriptionId }, "Stripe checkout.session.completed: could not resolve plan — skipping DB update")
       }
     }
     if (event.type === "customer.subscription.deleted") {

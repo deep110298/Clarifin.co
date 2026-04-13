@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import pinoHttp from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -9,8 +10,23 @@ import { clerkMiddleware } from "./middleware/auth";
 import { indexHtml } from "./generated-index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isProd = process.env.NODE_ENV === "production" || !!process.env.VERCEL;
 
 const app: Express = express();
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false, // Managed by Vercel/CDN for the SPA
+  crossOriginEmbedderPolicy: false,
+}));
+
+// CORS — only allow the deployed frontend origin
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 app.use(
   pinoHttp({
@@ -31,25 +47,24 @@ app.use(
     },
   }),
 );
-app.use(cors());
 app.use(clerkMiddleware());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb" })); // Prevent excessively large payloads
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 app.use("/api", router);
 
-// Global error handler — logs full error and returns message for debugging
+// Global error handler — never expose stack traces in production
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   logger.error({ err }, "Unhandled error");
-  res.status(500).json({ error: err.message, stack: err.stack?.split("\n").slice(0, 3).join(" | ") });
+  res.status(500).json({
+    error: isProd ? "Internal server error" : err.message,
+    ...(isProd ? {} : { stack: err.stack?.split("\n").slice(0, 5).join(" | ") }),
+  });
 });
 
 // Serve frontend static files
 if (process.env.VERCEL) {
-  // On Vercel the Lambda handles ALL requests (LAMBDAS deployment type).
-  // Serve the SPA shell (index.html) for every non-API, non-asset GET request
-  // so that React-Router / wouter deep links work correctly.
   app.get("/{*path}", (_req, res) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(indexHtml);

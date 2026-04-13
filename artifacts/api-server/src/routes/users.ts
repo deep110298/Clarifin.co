@@ -5,8 +5,20 @@ import { db } from "@workspace/db"
 import { usersTable } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
 import { logger } from "../lib/logger"
+import { z } from "zod"
 
 const router = Router()
+
+const clerkUserCreatedSchema = z.object({
+  id: z.string().min(1).max(255),
+  email_addresses: z.array(z.object({
+    email_address: z.string().email().max(320),
+  })).min(0),
+})
+
+const clerkUserDeletedSchema = z.object({
+  id: z.string().min(1).max(255),
+})
 
 router.post("/webhooks/clerk", async (req: Request, res: Response) => {
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET
@@ -42,14 +54,26 @@ router.post("/webhooks/clerk", async (req: Request, res: Response) => {
 
   try {
     if (type === "user.created" || type === "user.updated") {
-      const clerkId = data.id as string
-      const email = (data.email_addresses as Array<{ email_address: string }>)?.[0]?.email_address ?? ""
+      const parsed = clerkUserCreatedSchema.safeParse(data)
+      if (!parsed.success) {
+        logger.warn({ type, errors: parsed.error.flatten() }, "Invalid Clerk webhook payload")
+        res.status(400).json({ error: "Invalid payload" })
+        return
+      }
+      const { id: clerkId, email_addresses } = parsed.data
+      const email = email_addresses[0]?.email_address ?? ""
       await db.insert(usersTable)
         .values({ clerkId, email, plan: "free" })
         .onConflictDoUpdate({ target: usersTable.clerkId, set: { email, updatedAt: new Date() } })
     }
     if (type === "user.deleted") {
-      await db.delete(usersTable).where(eq(usersTable.clerkId, data.id as string))
+      const parsed = clerkUserDeletedSchema.safeParse(data)
+      if (!parsed.success) {
+        logger.warn({ type, errors: parsed.error.flatten() }, "Invalid Clerk webhook payload")
+        res.status(400).json({ error: "Invalid payload" })
+        return
+      }
+      await db.delete(usersTable).where(eq(usersTable.clerkId, parsed.data.id))
     }
     res.json({ received: true })
   } catch (err) {

@@ -8,7 +8,8 @@ import { useUser, useClerk } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "./UserAvatar";
 import { customFetch } from "@workspace/api-client-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useStore } from "@/lib/store";
 
 const NAV = [
   { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -21,7 +22,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
   const { user } = useUser();
   const { signOut } = useClerk();
+  const { profile } = useStore();
   const [upgrading, setUpgrading] = useState(false);
+
+  // Redirect to profile setup if profile isn't complete yet (skip for profile page itself)
+  useEffect(() => {
+    if (!profile.isComplete && location !== "/app/profile") {
+      navigate("/app/profile");
+    }
+  }, [profile.isComplete, location]);
 
   const handleUpgrade = async () => {
     setUpgrading(true);

@@ -73,9 +73,11 @@ router.post("/webhooks/stripe", async (req: Request, res: Response) => {
       const session = event.data.object as Stripe.CheckoutSession
       const userId = session.metadata?.userId
       const plan = session.metadata?.plan as "plus" | "advisor"
-      if (userId && plan) {
+      const customerId = typeof session.customer === "string" ? session.customer : null
+      const subscriptionId = typeof session.subscription === "string" ? session.subscription : null
+      if (userId && plan && customerId) {
         await db.update(usersTable)
-          .set({ plan, stripeCustomerId: session.customer as string, stripeSubscriptionId: session.subscription as string, updatedAt: new Date() })
+          .set({ plan, stripeCustomerId: customerId, stripeSubscriptionId: subscriptionId, updatedAt: new Date() })
           .where(eq(usersTable.id, userId))
       }
     }

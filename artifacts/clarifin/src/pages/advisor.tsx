@@ -128,8 +128,6 @@ export default function AdvisorPage() {
   const totalExpenses = profile.housing + profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses;
   const monthlySurplus = monthlyTakeHome - totalExpenses;
 
-  useQuery({ queryKey: ["me"], queryFn: () => customFetch<{ plan: string }>("/api/me") });
-
   // Load chat history from DB on mount; seed local store if it's empty
   const { data: dbHistory } = useQuery({
     queryKey: ["chat"],

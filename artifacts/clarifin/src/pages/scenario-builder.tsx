@@ -596,13 +596,21 @@ export default function ScenarioBuilderPage() {
         </div>
 
         {/* Scenario name */}
-        <input
-          type="text"
-          value={scenarioName}
-          onChange={(e) => setScenarioName(e.target.value)}
-          className="text-xl font-semibold text-[#1A1A2E] bg-transparent border-b-2 border-gray-200 focus:border-[#FACC15] focus:outline-none py-1 w-full max-w-md"
-          placeholder="Name this scenario..."
-        />
+        <div>
+          <input
+            type="text"
+            value={scenarioName}
+            onChange={(e) => setScenarioName(e.target.value)}
+            className={cn(
+              "text-xl font-semibold text-[#1A1A2E] bg-transparent border-b-2 focus:outline-none py-1 w-full max-w-md",
+              scenarioName.trim() ? "border-gray-200 focus:border-[#FACC15]" : "border-red-300 focus:border-red-400"
+            )}
+            placeholder="Name this scenario..."
+          />
+          {!scenarioName.trim() && (
+            <p className="text-xs text-red-500 mt-1">Scenario name is required</p>
+          )}
+        </div>
 
         {/* Type selector */}
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -793,7 +801,8 @@ export default function ScenarioBuilderPage() {
         <div className="flex gap-3">
           <button
             onClick={handleSave}
-            disabled={saveMutation.isPending}
+            disabled={saveMutation.isPending || !scenarioName.trim()}
+            title={!scenarioName.trim() ? "Please enter a scenario name" : undefined}
             className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-6 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {saveMutation.isPending ? "Saving..." : "Save scenario"}

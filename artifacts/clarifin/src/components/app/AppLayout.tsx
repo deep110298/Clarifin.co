@@ -22,7 +22,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const { profile } = useStore();
+  const { profile, resetStore } = useStore();
   const [upgrading, setUpgrading] = useState(false);
 
   // Redirect to profile setup if profile isn't complete yet (skip for profile page itself)
@@ -119,7 +119,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Sign out */}
         <div className="px-4 pb-4">
           <button
-            onClick={() => signOut({ redirectUrl: "/" })}
+            onClick={() => { resetStore(); signOut({ redirectUrl: "/" }); }}
             className="flex items-center gap-2 px-4 py-2.5 w-full text-sm text-[#9CA3AF] hover:text-[#1A1A2E] hover:bg-gray-50 rounded-xl transition-colors"
           >
             <LogOut style={{ width: 16, height: 16 }} strokeWidth={1.8} />

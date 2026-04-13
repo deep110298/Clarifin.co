@@ -7,7 +7,7 @@ import { requireAuth } from "../middleware/auth"
 
 const router = Router()
 
-// GET /api/chat — return full chat history for the user
+// GET /api/chat — return recent chat history for the user (capped at 100 messages)
 router.get("/chat", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const messages = await db
@@ -15,6 +15,7 @@ router.get("/chat", requireAuth, async (req: Request, res: Response, next: NextF
       .from(chatMessagesTable)
       .where(eq(chatMessagesTable.userId, req.clarifin!.userId))
       .orderBy(asc(chatMessagesTable.createdAt))
+      .limit(100)
     res.json(messages)
   } catch (err) {
     next(err)

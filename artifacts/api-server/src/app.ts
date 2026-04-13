@@ -1,6 +1,7 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -51,7 +52,15 @@ app.use(clerkMiddleware());
 app.use(express.json({ limit: "1mb" })); // Prevent excessively large payloads
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-app.use("/api", router);
+// Global rate limit — 120 requests per minute per IP across all API routes
+const globalRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please slow down." },
+});
+app.use("/api", globalRateLimit, router);
 
 // Global error handler — never expose stack traces in production
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

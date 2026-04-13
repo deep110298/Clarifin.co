@@ -145,12 +145,12 @@ export default function AdvisorPage() {
   }, [chatHistory, isTyping]);
 
   const handleClearChat = async () => {
-    clearChat();
     try {
       await customFetch("/api/chat", { method: "DELETE" });
+      clearChat(); // only clear local state after server confirms deletion
       qc.invalidateQueries({ queryKey: ["chat"] });
     } catch {
-      // best-effort
+      // best-effort: if DELETE fails, leave messages as-is so UI stays consistent
     }
   };
 
@@ -158,7 +158,7 @@ export default function AdvisorPage() {
     if (!text.trim() || isTyping) return;
 
     const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
+      id: crypto.randomUUID(),
       role: "user",
       content: text.trim(),
       timestamp: new Date().toISOString(),
@@ -177,7 +177,7 @@ export default function AdvisorPage() {
         }),
       });
       addChatMessage({
-        id: `msg-${Date.now()}-ai`,
+        id: crypto.randomUUID(),
         role: "assistant",
         content: reply,
         timestamp: new Date().toISOString(),
@@ -188,7 +188,7 @@ export default function AdvisorPage() {
         ? "You've used your **5 free questions**. Upgrade to Plus to unlock unlimited AI Advisor conversations."
         : "Something went wrong connecting to the AI. Please check your connection and try again.";
       addChatMessage({
-        id: `msg-${Date.now()}-err`,
+        id: crypto.randomUUID(),
         role: "assistant",
         content,
         timestamp: new Date().toISOString(),

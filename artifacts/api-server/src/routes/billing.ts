@@ -6,9 +6,14 @@ import { usersTable } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
 import { requireAuth } from "../middleware/auth"
 import { logger } from "../lib/logger"
+import { z } from "zod"
 
 const router = Router()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", { apiVersion: "2025-04-30.basil" })
+
+const checkoutSchema = z.object({
+  plan: z.enum(["plus", "advisor"]),
+})
 
 const PLAN_PRICES: Record<string, string> = {
   plus: process.env.STRIPE_PLUS_PRICE_ID ?? "",
@@ -16,10 +21,15 @@ const PLAN_PRICES: Record<string, string> = {
 }
 
 router.post("/billing/checkout", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  const { plan } = req.body as { plan: "plus" | "advisor" }
+  const parsed = checkoutSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid plan" })
+    return
+  }
+  const { plan } = parsed.data
   const priceId = PLAN_PRICES[plan]
   if (!priceId) {
-    res.status(400).json({ error: "Invalid plan" })
+    res.status(400).json({ error: "Plan price not configured" })
     return
   }
   try {
@@ -59,10 +69,16 @@ router.post("/billing/portal", requireAuth, async (req: Request, res: Response, 
 
 // Stripe webhook — needs raw body (mounted separately in routes/index.ts)
 router.post("/webhooks/stripe", async (req: Request, res: Response) => {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    logger.error("STRIPE_WEBHOOK_SECRET is not set — rejecting webhook")
+    res.status(500).json({ error: "Webhook secret not configured" })
+    return
+  }
   const sig = req.headers["stripe-signature"] as string
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET ?? "")
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret)
   } catch (err) {
     logger.error({ err }, "Invalid Stripe webhook signature")
     res.status(400).send("Invalid signature")

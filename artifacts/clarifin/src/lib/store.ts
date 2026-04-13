@@ -105,6 +105,8 @@ interface AppStore {
   deleteScenario: (id: string) => void;
   addChatMessage: (msg: ChatMessage) => void;
   clearChat: () => void;
+  /** Wipe all local state + localStorage — call on logout to prevent data leakage on shared computers */
+  resetStore: () => void;
 }
 
 const StoreContext = createContext<AppStore | null>(null);
@@ -165,6 +167,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const clearChat = useCallback(() => setChatHistory([]), []);
 
+  const resetStore = useCallback(() => {
+    setProfileState(DEFAULT_PROFILE);
+    setScenarios([]);
+    setChatHistory([]);
+    try {
+      localStorage.removeItem("clarifin_profile");
+      localStorage.removeItem("clarifin_scenarios");
+      localStorage.removeItem("clarifin_chat");
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const value: AppStore = {
     profile,
     scenarios,
@@ -175,6 +190,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     deleteScenario,
     addChatMessage,
     clearChat,
+    resetStore,
   };
 
   return createElement(StoreContext.Provider, { value }, children);

@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Link } from "wouter"
 import { customFetch } from "@workspace/api-client-react"
@@ -35,6 +36,8 @@ function formatDate(iso: string) {
 
 export default function ScenariosListPage() {
   const qc = useQueryClient()
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
 
   const { data: scenarios = [], isLoading } = useQuery({
     queryKey: ["scenarios"],
@@ -51,6 +54,18 @@ export default function ScenariosListPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["scenarios"] }),
   })
 
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true)
+    setCheckoutError(null)
+    try {
+      const r = await customFetch<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan: "plus" }) })
+      window.location.href = r.url
+    } catch {
+      setCheckoutError("Could not start checkout. Please try again.")
+      setCheckoutLoading(false)
+    }
+  }
+
   const isFree = me?.plan === "free"
   const atLimit = isFree && scenarios.length >= 3
 
@@ -65,7 +80,7 @@ export default function ScenariosListPage() {
           </div>
           {!atLimit && (
             <Link href="/app/scenarios/new">
-              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-[#yellow-300] text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-bold transition-colors">
+              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-bold transition-colors">
                 <Plus className="w-4 h-4" /> New scenario
               </button>
             </Link>
@@ -74,20 +89,22 @@ export default function ScenariosListPage() {
 
         {/* Free plan banner */}
         {isFree && (
-          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <><div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium text-amber-800">Free plan — up to 3 scenarios</p>
               <p className="text-xs text-amber-600 mt-0.5">Upgrade to Plus ($12/mo) for unlimited scenarios and 30-year projections.</p>
             </div>
             <button
-              onClick={() => customFetch("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan: "plus" }) })
-                .then((r: unknown) => { window.location.href = (r as { url: string }).url })}
-              className="shrink-0 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl font-medium transition-colors"
+              onClick={handleUpgrade}
+              disabled={checkoutLoading}
+              className="shrink-0 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl font-medium transition-colors disabled:opacity-60"
             >
-              Upgrade
+              {checkoutLoading ? "Loading..." : "Upgrade"}
             </button>
           </div>
+          {checkoutError && <p className="text-xs text-red-500 mt-2 px-1">{checkoutError}</p>}
+          </>
         )}
 
         {/* Loading */}
@@ -110,7 +127,7 @@ export default function ScenariosListPage() {
               Create your first scenario to see how a life decision affects your finances over 30 years.
             </p>
             <Link href="/app/scenarios/new">
-              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-[#yellow-300] text-[#1A1A2E] px-5 py-2.5 rounded-2xl font-bold text-sm transition-colors">
+              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-5 py-2.5 rounded-2xl font-bold text-sm transition-colors">
                 <Plus className="w-4 h-4" /> Create first scenario
               </button>
             </Link>
@@ -175,7 +192,7 @@ export default function ScenariosListPage() {
               </div>
             </div>
             <Link href="/app/advisor">
-              <button className="shrink-0 text-sm bg-[#FACC15] hover:bg-[#yellow-300] text-white px-4 py-2 rounded-xl font-medium transition-colors">
+              <button className="shrink-0 text-sm bg-[#FACC15] hover:bg-yellow-300 text-white px-4 py-2 rounded-xl font-medium transition-colors">
                 Ask AI
               </button>
             </Link>

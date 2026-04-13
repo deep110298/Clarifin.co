@@ -81,6 +81,7 @@ export default function ProfileSetupPage() {
     setPhotoError(null)
     try {
       await user.setProfileImage({ file })
+      setPhotoError(null)
     } catch {
       setPhotoError("Upload failed. Please try a different image.")
     } finally {

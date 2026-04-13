@@ -103,7 +103,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             disabled={upgrading}
             className="w-full bg-[#FACC15] text-[#1A1A2E] text-xs font-bold py-2 rounded-lg hover:bg-yellow-300 transition-colors disabled:opacity-60"
           >
-            {upgrading ? "Loading..." : "Upgrade to Pro"}
+            {upgrading ? "Loading..." : "Upgrade to Plus"}
           </button>
         </div>
 

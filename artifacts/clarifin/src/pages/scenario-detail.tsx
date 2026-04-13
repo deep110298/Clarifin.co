@@ -88,6 +88,9 @@ export default function ScenarioDetailPage() {
       qc.invalidateQueries({ queryKey: ["scenarios"] })
       navigate("/app/scenarios")
     },
+    onError: () => {
+      alert("Failed to delete scenario. Please try again.")
+    },
   })
 
   const renameMutation = useMutation({

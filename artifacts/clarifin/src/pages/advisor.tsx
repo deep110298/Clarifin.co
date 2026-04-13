@@ -9,38 +9,6 @@ import { cn } from "@/lib/utils";
 import { customFetch } from "@workspace/api-client-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-// ── Mock AI responses ──────────────────────────────────────────────────────
-// Wire this to the Claude API by replacing `getMockResponse` with a fetch
-// to POST /api/advisor with { messages, profile }. The API server should
-// call Anthropic's Messages API with the financial profile as system context.
-
-function getMockResponse(question: string, ctx: { monthlyTakeHome: number; monthlySurplus: number; netWorth: number }): string {
-  const q = question.toLowerCase();
-
-  if (q.includes("travel") || q.includes("time off") || q.includes("sabbatical") || q.includes("6 months")) {
-    return `Taking 6 months off has a real but manageable cost. Here's the math on your situation:\n\n**Direct income loss:** You'd forgo roughly ${formatCurrency(ctx.monthlyTakeHome * 6)} in take-home pay.\n\n**Savings gap:** Based on your current ${formatCurrency(ctx.monthlySurplus)}/month surplus, you'd miss out on ~${formatCurrency(ctx.monthlySurplus * 6)} in contributions.\n\n**Total cost over 20 years:** When you factor in lost compounding at 7%, a 6-month break today costs approximately ${formatCurrency(ctx.monthlySurplus * 6 * 3.8)} in future net worth.\n\n**My take:** This is likely worth it if it prevents burnout or enables a career pivot. I'd recommend building a 6-month emergency buffer first. Would you like me to model a specific scenario?`;
-  }
-
-  if (q.includes("house") || q.includes("home") || q.includes("mortgage") || q.includes("buy") || q.includes("rent")) {
-    return `The rent vs. buy decision is more nuanced than most people think. A few things to consider:\n\n**Break-even point:** In most markets, you need to stay 5–7 years for buying to beat renting financially. This assumes ~2.5% annual appreciation and accounts for transaction costs.\n\n**The opportunity cost:** Every dollar in a down payment isn't invested in the market. A $100k down payment at 7% average annual return would grow to ~$550k in 30 years.\n\n**Your current situation:** With ${formatCurrency(ctx.netWorth)} in net worth, you'd want to ensure your down payment doesn't eliminate your emergency fund.\n\n**My recommendation:** Use the Scenario Builder to model a specific property. Input the home price, down payment, and your local mortgage rate — I can help you interpret the results.`;
-  }
-
-  if (q.includes("retire") || q.includes("fire") || q.includes("financial independence")) {
-    const yearsToMillion = ctx.monthlySurplus > 0 ? Math.ceil(Math.log(1_000_000 / Math.max(ctx.netWorth, 1)) / Math.log(1.07)) : 99;
-    return `Here's your retirement picture based on current numbers:\n\n**Current monthly surplus:** ${formatCurrency(ctx.monthlySurplus)}\n**Estimated net worth:** ${formatCurrency(ctx.netWorth)}\n\n**Rule of 25:** For financial independence, you need 25x your annual expenses saved. That's roughly ${formatCurrency(12 * (ctx.monthlyTakeHome - ctx.monthlySurplus) * 25)} in your case.\n\n**Key levers:**\n- Increasing your savings rate by 5% is worth more than a 5% raise — model it in Scenarios.\n- Employer 401k match is an instant 50–100% return. Max it first.\n- The earlier you invest, the more compounding works for you.\n\nWould you like me to model what happens if you increase your retirement contributions?`;
-  }
-
-  if (q.includes("debt") || q.includes("student loan") || q.includes("credit card") || q.includes("pay off")) {
-    return `The "pay off debt vs. invest" question has a mathematical answer:\n\n**The rule:** If your debt interest rate > expected investment return, pay off debt first. If it's lower, invest the difference.\n\n**In practice:**\n- Credit card debt (18–25% APR) → always pay off first\n- Student loans (4–7%) → borderline — pay minimum, invest the rest\n- Mortgage (6–7%) → roughly equal to market returns; both are fine\n\n**Your situation:** Every extra $1,000 toward high-interest debt gives you a guaranteed return equal to that interest rate. The stock market averages 7–10% but isn't guaranteed.\n\n**My recommendation:** Eliminate any credit card debt immediately (it's a guaranteed 20%+ return). For student loans, make minimum payments and invest the surplus in a low-cost index fund.`;
-  }
-
-  if (q.includes("raise") || q.includes("salary") || q.includes("job offer") || q.includes("negotiate")) {
-    return `Salary negotiations are one of the highest-ROI financial moves you can make. Here's why:\n\n**The lifetime effect:** A $10,000 raise today — assuming 3% annual increases — compounds to **${formatCurrency(10000 * 30 * 1.5)}+** in total additional lifetime earnings.\n\n**After-tax reality:** A $10k gross raise is roughly ${formatCurrency(10000 * 0.68)} after federal/FICA taxes — still significant.\n\n**How to use Clarifin:** Go to Scenario Builder → Job Change. Enter your current salary vs. the offer. I'll show you the true 20-year impact after taxes and any cost-of-living difference.\n\n**Negotiation tip:** Your first offer is almost never the best offer. Counter at 10–15% above the offer. The worst they say is no.`;
-  }
-
-  return `That's a great question. To give you the most accurate answer, I'd need a bit more context about your specific situation.\n\nHere's what I know from your financial profile:\n- **Monthly take-home:** ${formatCurrency(ctx.monthlyTakeHome)}\n- **Monthly surplus:** ${formatCurrency(ctx.monthlySurplus)}\n- **Net worth:** ${formatCurrency(ctx.netWorth)}\n\nTo model the specific impact of what you're asking, try the Scenario Builder — it lets you input exact numbers and see the 30-year projection side by side.\n\nIf you can tell me more about your specific decision (amounts, timelines, alternatives), I can give you a much more precise analysis.`;
-}
-
 const SUGGESTED = [
   { icon: TrendingUp, text: "What if I took 6 months off to travel?" },
   { icon: Home, text: "Should I buy a home or keep renting?" },
@@ -202,41 +170,29 @@ export default function AdvisorPage() {
     setIsTyping(true);
 
     try {
-      const res = await fetch("/api/advisor", {
+      // Use customFetch so Clerk auth token is included in the request
+      const { reply } = await customFetch<{ reply: string }>("/api/advisor", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text,
           history: chatHistory.slice(-10).map(m => ({ role: m.role, content: m.content })),
         }),
       });
-
-      if (res.status === 402) {
-        addChatMessage({
-          id: `msg-${Date.now()}-gate`,
-          role: "assistant",
-          content: "You've used your **5 free questions**. Upgrade to Pro to unlock unlimited AI Advisor conversations and get the most out of your financial planning.",
-          timestamp: new Date().toISOString(),
-        });
-        return;
-      }
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const { reply } = await res.json() as { reply: string };
       addChatMessage({
         id: `msg-${Date.now()}-ai`,
         role: "assistant",
         content: reply,
         timestamp: new Date().toISOString(),
       });
-    } catch {
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      const content = status === 402
+        ? "You've used your **5 free questions**. Upgrade to Plus to unlock unlimited AI Advisor conversations."
+        : "Something went wrong connecting to the AI. Please check your connection and try again.";
       addChatMessage({
         id: `msg-${Date.now()}-err`,
         role: "assistant",
-        content: "Something went wrong connecting to the AI. Please check your connection and try again.",
+        content,
         timestamp: new Date().toISOString(),
       });
     } finally {

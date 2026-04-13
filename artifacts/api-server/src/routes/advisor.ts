@@ -26,7 +26,7 @@ router.post("/advisor", requireAuth, async (req: Request, res: Response, next: N
       .from(chatMessagesTable)
       .where(eq(chatMessagesTable.userId, req.clarifin!.userId))
     if (msgCount >= 10) { // 5 user + 5 assistant = 10 rows
-      res.status(402).json({ error: "Free plan includes 5 AI Advisor questions. Upgrade to Pro for unlimited." })
+      res.status(402).json({ error: "Free plan includes 5 AI Advisor questions. Upgrade to Plus for unlimited." })
       return
     }
   }

@@ -2,7 +2,7 @@ import { Router } from "express"
 import type { Request, Response, NextFunction } from "express"
 import { db } from "@workspace/db"
 import { scenariosTable } from "@workspace/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq, and, desc } from "drizzle-orm"
 import { requireAuth } from "../middleware/auth"
 import { z } from "zod"
 
@@ -20,7 +20,7 @@ router.get("/scenarios", requireAuth, async (req: Request, res: Response, next: 
   try {
     const scenarios = await db.select().from(scenariosTable)
       .where(eq(scenariosTable.userId, req.clarifin!.userId))
-      .orderBy(scenariosTable.createdAt)
+      .orderBy(desc(scenariosTable.createdAt))
     res.json(scenarios)
   } catch (err) {
     next(err)

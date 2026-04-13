@@ -17,6 +17,8 @@ import {
   formatCurrency,
 } from "@/lib/financial-engine";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 
 const PROJECTION_YEARS = [10, 20, 30] as const;
 
@@ -37,10 +39,18 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   "custom": Sliders,
 };
 
+interface ApiScenario { id: string; name: string; type: string; createdAt: string }
+
 export default function DashboardPage() {
-  const { profile, scenarios } = useStore();
+  const { profile } = useStore();
   const [projYears, setProjYears] = useState<10 | 20 | 30>(30);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Always fetch fresh scenarios from the API so a page refresh shows correct data
+  const { data: scenarios = [] } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => customFetch<ApiScenario[]>("/api/scenarios"),
+  });
 
   const monthlyTakeHome = useMemo(
     () => calculateMonthlyTakeHome(profile.grossIncome, profile.filingStatus, profile.state),

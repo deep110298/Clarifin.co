@@ -57,9 +57,10 @@ app.use("/api", router);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   logger.error({ err }, "Unhandled error");
+  // Temporarily expose error details to diagnose production 500s
   res.status(500).json({
-    error: isProd ? "Internal server error" : err.message,
-    ...(isProd ? {} : { stack: err.stack?.split("\n").slice(0, 5).join(" | ") }),
+    error: err.message,
+    stack: err.stack?.split("\n").slice(0, 8).join(" | "),
   });
 });
 

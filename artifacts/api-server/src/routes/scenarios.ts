@@ -114,4 +114,62 @@ router.delete("/scenarios/:id", requireAuth, async (req: Request, res: Response,
   }
 })
 
+// POST /api/scenarios/:id/share — generate (or return existing) share token
+router.post("/scenarios/:id/share", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [scenario] = await db.select()
+      .from(scenariosTable)
+      .where(and(eq(scenariosTable.id, req.params.id), eq(scenariosTable.userId, req.clarifin!.userId)))
+    if (!scenario) {
+      res.status(404).json({ error: "Scenario not found" })
+      return
+    }
+    // Reuse existing token if already shared
+    const token = scenario.shareToken ?? crypto.randomUUID()
+    if (!scenario.shareToken) {
+      await db.update(scenariosTable)
+        .set({ shareToken: token, updatedAt: new Date() })
+        .where(eq(scenariosTable.id, req.params.id))
+    }
+    res.json({ token })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// DELETE /api/scenarios/:id/share — revoke share token
+router.delete("/scenarios/:id/share", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await db.update(scenariosTable)
+      .set({ shareToken: null, updatedAt: new Date() })
+      .where(and(eq(scenariosTable.id, req.params.id), eq(scenariosTable.userId, req.clarifin!.userId)))
+    res.status(204).send()
+  } catch (err) {
+    next(err)
+  }
+})
+
+// GET /api/shared/:token — public read-only scenario view (no auth required)
+router.get("/shared/:token", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [scenario] = await db.select({
+      id: scenariosTable.id,
+      name: scenariosTable.name,
+      type: scenariosTable.type,
+      current: scenariosTable.current,
+      proposed: scenariosTable.proposed,
+      createdAt: scenariosTable.createdAt,
+    })
+      .from(scenariosTable)
+      .where(eq(scenariosTable.shareToken, req.params.token))
+    if (!scenario) {
+      res.status(404).json({ error: "Shared scenario not found or link has been revoked" })
+      return
+    }
+    res.json(scenario)
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router

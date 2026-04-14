@@ -15,6 +15,7 @@ import AdvisorPage from "@/pages/advisor"
 import ProfileSetupPage from "@/pages/profile-setup"
 import SignInPage from "@/pages/sign-in"
 import SignUpPage from "@/pages/sign-up"
+import SharedScenarioPage from "@/pages/shared-scenario"
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -49,6 +50,7 @@ function AppRoutes() {
       <Route path="/" component={LandingPage} />
       <Route path="/sign-in" component={SignInPage} />
       <Route path="/sign-up" component={SignUpPage} />
+      <Route path="/shared/:token" component={SharedScenarioPage} />
 
       <Route path="/app/dashboard">
         <ProtectedRoute><DashboardPage /></ProtectedRoute>

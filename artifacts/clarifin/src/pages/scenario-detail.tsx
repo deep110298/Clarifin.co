@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, useRef } from "react"
 import { useParams, useLocation, Link } from "wouter"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { customFetch } from "@workspace/api-client-react"
@@ -8,6 +8,7 @@ import {
 import {
   ArrowLeft, Trash2, TrendingUp, TrendingDown, Award, AlertCircle,
   Clock, PiggyBank, DollarSign, Zap, SlidersHorizontal, Sparkles, Pencil,
+  Share2, Copy, Check, X, Link as LinkIcon,
 } from "lucide-react"
 import { AppLayout } from "@/components/app/AppLayout"
 import {
@@ -75,6 +76,10 @@ export default function ScenarioDetailPage() {
   const [showWhatIf, setShowWhatIf] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState("")
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareLink, setShareLink] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const shareLinkRef = useRef<HTMLInputElement>(null)
 
   const { data: scenario, isLoading, isError } = useQuery({
     queryKey: ["scenario", id],
@@ -102,6 +107,36 @@ export default function ScenarioDetailPage() {
       setEditingName(false)
     },
   })
+
+  const shareMutation = useMutation({
+    mutationFn: () => customFetch<{ token: string }>(`/api/scenarios/${id}/share`, { method: "POST" }),
+    onSuccess: (data) => {
+      const url = `${window.location.origin}/shared/${data.token}`
+      setShareLink(url)
+    },
+  })
+
+  const revokeMutation = useMutation({
+    mutationFn: () => customFetch(`/api/scenarios/${id}/share`, { method: "DELETE" }),
+    onSuccess: () => {
+      setShareLink(null)
+      setShowShareModal(false)
+      qc.invalidateQueries({ queryKey: ["scenario", id] })
+    },
+  })
+
+  const handleOpenShare = () => {
+    setShowShareModal(true)
+    if (!shareLink) shareMutation.mutate()
+  }
+
+  const handleCopyLink = () => {
+    if (!shareLink) return
+    navigator.clipboard.writeText(shareLink).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   const startRename = () => {
     setNameInput(scenario?.name ?? "")
@@ -312,13 +347,84 @@ export default function ScenarioDetailPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => { if (confirm("Delete this scenario?")) deleteMutation.mutate() }}
-            className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-xl transition-colors"
-          >
-            <Trash2 className="w-4 h-4" /> Delete
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenShare}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1A1A2E] hover:bg-gray-100 px-3 py-2 rounded-xl transition-colors"
+            >
+              <Share2 className="w-4 h-4" /> Share
+            </button>
+            <button
+              onClick={() => { if (confirm("Delete this scenario?")) deleteMutation.mutate() }}
+              className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-xl transition-colors"
+            >
+              <Trash2 className="w-4 h-4" /> Delete
+            </button>
+          </div>
         </div>
+
+        {/* Share modal */}
+        {showShareModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowShareModal(false)}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+              <div className="flex items-start justify-between mb-5">
+                <div>
+                  <h2 className="text-lg font-bold text-[#1A1A2E]">Share with family</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">Anyone with the link can view this scenario — read-only, no account needed.</p>
+                </div>
+                <button onClick={() => setShowShareModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+              </div>
+
+              {shareMutation.isPending && (
+                <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
+                  <div className="w-4 h-4 border-2 border-[#FACC15] border-t-transparent rounded-full animate-spin" />
+                  Generating link…
+                </div>
+              )}
+
+              {shareLink && !shareMutation.isPending && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <LinkIcon className="w-4 h-4 text-gray-400 shrink-0" />
+                    <input
+                      ref={shareLinkRef}
+                      readOnly
+                      value={shareLink}
+                      className="flex-1 text-sm text-gray-600 bg-transparent outline-none truncate"
+                    />
+                  </div>
+                  <button
+                    onClick={handleCopyLink}
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors",
+                      copied
+                        ? "bg-green-100 text-green-700"
+                        : "bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E]"
+                    )}
+                  >
+                    {copied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy link</>}
+                  </button>
+                  <p className="text-xs text-gray-400 text-center">Send this link via text, email, or any messaging app.</p>
+                  <div className="border-t border-gray-100 pt-3">
+                    <button
+                      onClick={() => revokeMutation.mutate()}
+                      disabled={revokeMutation.isPending}
+                      className="text-xs text-red-400 hover:text-red-600 hover:underline disabled:opacity-50 transition-colors"
+                    >
+                      {revokeMutation.isPending ? "Revoking…" : "Revoke link (disable sharing)"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {shareMutation.isError && (
+                <p className="text-sm text-red-500">Failed to generate link. Please try again.</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {analysis && (
           <>

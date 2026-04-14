@@ -47,6 +47,7 @@ export const scenariosTable = pgTable("scenarios", {
   type: text("type").notNull(), // "job-change" | "buy-home" | "school" | "child" | "time-off" | "custom"
   current: jsonb("current").$type<Record<string, unknown>>().notNull().default({}),
   proposed: jsonb("proposed").$type<Record<string, unknown>>().notNull().default({}),
+  shareToken: text("share_token").unique(), // null = not shared; UUID = shareable via link
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 })

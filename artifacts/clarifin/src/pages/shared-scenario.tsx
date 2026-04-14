@@ -8,7 +8,8 @@ import {
 import { AlertCircle, Award, TrendingDown, Clock, DollarSign, PiggyBank } from "lucide-react"
 import {
   calculateMonthlyTakeHome, calculateMortgagePayment, calculateRetirementTarget,
-  projectNetWorth, estimateRetirementAge, formatCurrency,
+  projectNetWorth, projectNetWorthPhased, estimateRetirementAge, estimateRetirementAgePhased,
+  formatCurrency, type SurplusPhase,
 } from "@/lib/financial-engine"
 import { cn } from "@/lib/utils"
 
@@ -96,39 +97,59 @@ export default function SharedScenarioPage() {
       propMonthlyHousing = currMonthlyHousing
       propScenarioCosts = (Number(prop.monthlyChildcare) || 0) + (Number(prop.monthlyExtras) || 0)
     } else if (scenario.type === "school") {
-      const incomeWhileInSchool = Number(prop.incomeWhileInSchool) || 0
-      const durationYears = Number(prop.durationYears) || 2
-      const salaryAfter = Number(prop.salaryAfter) || currIncome
-      const takeHomeInSchool = calculateMonthlyTakeHome(incomeWhileInSchool, profile.filingStatus, currState)
-      const takeHomeAfter = calculateMonthlyTakeHome(salaryAfter, profile.filingStatus, currState)
-      const schoolWeight = Math.min(durationYears, 30) / 30
-      propTakeHome = takeHomeInSchool * schoolWeight + takeHomeAfter * (1 - schoolWeight)
+      propTakeHome = calculateMonthlyTakeHome(Number(prop.incomeWhileInSchool) || 0, profile.filingStatus, currState)
       propMonthlyHousing = currMonthlyHousing
-      propScenarioCosts = ((Number(prop.annualTuition) || 0) / 12) * schoolWeight
+      propScenarioCosts = (Number(prop.annualTuition) || 0) / 12
     } else if (scenario.type === "time-off") {
-      const months = Number(prop.months) || 6
-      const takeHomeTimeOff = calculateMonthlyTakeHome(Number(prop.partTimeIncome) || 0, profile.filingStatus, currState)
-      const takeHomeAfter = calculateMonthlyTakeHome(Number(prop.salaryAfter) || currIncome, profile.filingStatus, currState)
-      const offWeight = months / (30 * 12)
-      propTakeHome = takeHomeTimeOff * offWeight + takeHomeAfter * (1 - offWeight)
+      propTakeHome = calculateMonthlyTakeHome(Number(prop.partTimeIncome) || 0, profile.filingStatus, currState)
       propMonthlyHousing = currMonthlyHousing
-      propScenarioCosts = (Number(prop.extraMonthlyCost) || 0) * offWeight
+      propScenarioCosts = Number(prop.extraMonthlyCost) || 0
     }
 
     const propSurplus = propTakeHome - propMonthlyHousing - otherExpenses - propScenarioCosts
     const startNetWorth = profile.emergencyFund + profile.retirementBalance + profile.otherInvestments -
       (profile.creditCardDebt + profile.studentLoans + profile.carLoans + profile.otherDebt)
 
-    const currAnnualExpenses = (currMonthlyHousing + otherExpenses) * 12
-    const propAnnualExpenses = (propMonthlyHousing + otherExpenses + propScenarioCosts) * 12
-    const retirementTargetCurr = calculateRetirementTarget(currAnnualExpenses / 12)
-    const retirementTargetProp = calculateRetirementTarget(propAnnualExpenses / 12)
+    // Build phased projections — temporary costs expire after fixed years
+    const PROJ_YEARS = 30
+    let propPhases: SurplusPhase[] = [{ monthlySurplus: propSurplus, years: PROJ_YEARS }]
 
-    const projCurr = projectNetWorth(startNetWorth, currSurplus, 30)
-    const projProp = projectNetWorth(startNetWorth, propSurplus, 30)
+    if (scenario.type === "child") {
+      const CHILDCARE_YEARS = 5
+      const takeHomeAfter = calculateMonthlyTakeHome(currIncome, profile.filingStatus, currState)
+      const surplusAfter = takeHomeAfter - currMonthlyHousing - otherExpenses
+      propPhases = [
+        { monthlySurplus: propSurplus, years: CHILDCARE_YEARS },
+        { monthlySurplus: surplusAfter, years: PROJ_YEARS - CHILDCARE_YEARS },
+      ]
+    } else if (scenario.type === "school") {
+      const durationYears = Math.max(1, Math.round(Number(prop.durationYears) || 2))
+      const takeHomeAfter = calculateMonthlyTakeHome(Number(prop.salaryAfter) || currIncome, profile.filingStatus, currState)
+      const surplusAfter = takeHomeAfter - currMonthlyHousing - otherExpenses
+      propPhases = [
+        { monthlySurplus: propSurplus, years: Math.min(durationYears, PROJ_YEARS) },
+        { monthlySurplus: surplusAfter, years: Math.max(0, PROJ_YEARS - durationYears) },
+      ].filter(p => p.years > 0)
+    } else if (scenario.type === "time-off") {
+      const offYears = Math.max(1, Math.ceil((Number(prop.months) || 6) / 12))
+      const takeHomeAfter = calculateMonthlyTakeHome(Number(prop.salaryAfter) || currIncome, profile.filingStatus, currState)
+      const surplusAfter = takeHomeAfter - currMonthlyHousing - otherExpenses
+      propPhases = [
+        { monthlySurplus: propSurplus, years: Math.min(offYears, PROJ_YEARS) },
+        { monthlySurplus: surplusAfter, years: Math.max(0, PROJ_YEARS - offYears) },
+      ].filter(p => p.years > 0)
+    }
+
+    const currAnnualExpenses = (currMonthlyHousing + otherExpenses) * 12
+    const longTermPropExpenses = (propMonthlyHousing + otherExpenses) * 12
+    const retirementTargetCurr = calculateRetirementTarget(currAnnualExpenses / 12)
+    const retirementTargetProp = calculateRetirementTarget(longTermPropExpenses / 12)
+
+    const projCurr = projectNetWorth(startNetWorth, currSurplus, PROJ_YEARS)
+    const projProp = projectNetWorthPhased(startNetWorth, propPhases)
 
     const retireCurr = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, currSurplus), retirementTargetCurr)
-    const retireProp = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, propSurplus), retirementTargetProp)
+    const retireProp = estimateRetirementAgePhased(profile.age, startNetWorth, propPhases, retirementTargetProp)
 
     const propWins = propSurplus >= currSurplus
     const projData = projCurr.map((pt, i) => ({

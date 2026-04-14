@@ -13,7 +13,8 @@ import {
 import { AppLayout } from "@/components/app/AppLayout"
 import {
   calculateMonthlyTakeHome, calculateMortgagePayment, calculateRetirementTarget,
-  projectNetWorth, estimateRetirementAge, formatCurrency,
+  projectNetWorth, projectNetWorthPhased, estimateRetirementAge, estimateRetirementAgePhased,
+  formatCurrency, type SurplusPhase,
 } from "@/lib/financial-engine"
 import { useStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -188,77 +189,108 @@ export default function ScenarioDetailPage() {
       // propMonthlyHousing already set above from prop.monthlyHousing || currMonthlyHousing
 
     } else if (scenario.type === "child") {
-      // Housing unchanged; income may be partially reduced for parental leave (already blended in builder)
+      // Year ~1: income reduced during parental leave (blended avg ≈ 3 months leave in first year)
       const leaveIncome = Number(prop.leaveIncome) || currIncome
       const blendedAnnualIncome = leaveIncome * 0.25 + currIncome * 0.75
       propTakeHome = calculateMonthlyTakeHome(blendedAnnualIncome, profile.filingStatus, currState)
-      propMonthlyHousing = currMonthlyHousing // housing doesn't change when having a baby
+      propMonthlyHousing = currMonthlyHousing
       const monthlyChildcare = Number(prop.monthlyChildcare) || 0
       const monthlyExtras = Number(prop.monthlyExtras) || 0
       propScenarioCosts = monthlyChildcare + monthlyExtras
 
     } else if (scenario.type === "school") {
+      // Phase 1: in-school (reduced income + tuition)
       const incomeWhileInSchool = Number(prop.incomeWhileInSchool) || 0
       const annualTuition = Number(prop.annualTuition) || 0
-      const salaryAfter = Number(prop.salaryAfter) || currIncome
-      const durationYears = Number(prop.durationYears) || 2
-
-      const takeHomeInSchool = calculateMonthlyTakeHome(incomeWhileInSchool, profile.filingStatus, currState)
-      const takeHomeAfter = calculateMonthlyTakeHome(salaryAfter, profile.filingStatus, currState)
-      const monthlyTuition = annualTuition / 12
-      const totalYears = 30
-      const schoolWeight = Math.min(durationYears, totalYears) / totalYears
-      const afterWeight = 1 - schoolWeight
-      propTakeHome = takeHomeInSchool * schoolWeight + takeHomeAfter * afterWeight
+      propTakeHome = calculateMonthlyTakeHome(incomeWhileInSchool, profile.filingStatus, currState)
       propMonthlyHousing = currMonthlyHousing
-      propScenarioCosts = monthlyTuition * schoolWeight
+      propScenarioCosts = annualTuition / 12
 
     } else if (scenario.type === "time-off") {
-      const months = Number(prop.months) || 6
+      // Phase 1: time off (reduced/no income + extra costs)
       const partTimeIncome = Number(prop.partTimeIncome) || 0
       const extraMonthlyCost = Number(prop.extraMonthlyCost) || 0
-      const salaryAfter = Number(prop.salaryAfter) || currIncome
-
-      const takeHomeTimeOff = calculateMonthlyTakeHome(partTimeIncome, profile.filingStatus, currState)
-      const takeHomeAfter = calculateMonthlyTakeHome(salaryAfter, profile.filingStatus, currState)
-      const totalMonths = 30 * 12
-      const offWeight = months / totalMonths
-      const afterWeight = 1 - offWeight
-      propTakeHome = takeHomeTimeOff * offWeight + takeHomeAfter * afterWeight
+      propTakeHome = calculateMonthlyTakeHome(partTimeIncome, profile.filingStatus, currState)
       propMonthlyHousing = currMonthlyHousing
-      propScenarioCosts = extraMonthlyCost * offWeight
+      propScenarioCosts = extraMonthlyCost
     }
 
+    // Immediate surplus (Phase 1) — shown in verdict card and stat tiles
     const propSurplus = propTakeHome - propMonthlyHousing - otherExpenses - propScenarioCosts
 
-    // What-If adjusted surplus
+    // ── Build phased surplus schedule for accurate long-term projections ─────
+    // Child/school/time-off have temporary costs — after they end, surplus recovers.
+    // Treating these as permanent (the old bug) causes retirement age to be wildly overstated.
+    let propPhases: SurplusPhase[] = [{ monthlySurplus: propSurplus, years: projYears }]
+
+    if (scenario.type === "child") {
+      const CHILDCARE_YEARS = 5 // childcare typically ages 0–5
+      const monthlyChildcare = Number(prop.monthlyChildcare) || 0
+      const monthlyExtras = Number(prop.monthlyExtras) || 0
+      // After childcare ends: full income returns, no childcare/extras costs
+      const takeHomeAfterLeave = calculateMonthlyTakeHome(currIncome, profile.filingStatus, currState)
+      const surplusAfterChildcare = takeHomeAfterLeave - currMonthlyHousing - otherExpenses
+      propPhases = [
+        { monthlySurplus: propSurplus, years: Math.min(CHILDCARE_YEARS, projYears) },
+        { monthlySurplus: surplusAfterChildcare, years: Math.max(0, projYears - CHILDCARE_YEARS) },
+      ].filter(p => p.years > 0)
+
+    } else if (scenario.type === "school") {
+      const durationYears = Math.max(1, Math.round(Number(prop.durationYears) || 2))
+      const salaryAfter = Number(prop.salaryAfter) || currIncome
+      // After graduation: higher salary, no tuition
+      const takeHomeAfter = calculateMonthlyTakeHome(salaryAfter, profile.filingStatus, currState)
+      const surplusAfterSchool = takeHomeAfter - currMonthlyHousing - otherExpenses
+      propPhases = [
+        { monthlySurplus: propSurplus, years: Math.min(durationYears, projYears) },
+        { monthlySurplus: surplusAfterSchool, years: Math.max(0, projYears - durationYears) },
+      ].filter(p => p.years > 0)
+
+    } else if (scenario.type === "time-off") {
+      const offMonths = Number(prop.months) || 6
+      const offYears = Math.max(1, Math.ceil(offMonths / 12))
+      const salaryAfter = Number(prop.salaryAfter) || currIncome
+      const extraMonthlyCost = Number(prop.extraMonthlyCost) || 0
+      // After returning to work: full salary, no extra costs
+      const takeHomeAfter = calculateMonthlyTakeHome(salaryAfter, profile.filingStatus, currState)
+      const surplusAfterReturn = takeHomeAfter - currMonthlyHousing - otherExpenses
+      propPhases = [
+        { monthlySurplus: propSurplus, years: Math.min(offYears, projYears) },
+        { monthlySurplus: surplusAfterReturn, years: Math.max(0, projYears - offYears) },
+      ].filter(p => p.years > 0)
+    }
+
+    // What-If adjusted surplus (applied to all phases)
     const whatIfExtraTakeHome = (whatIf.incomeBoost / 12) * 0.72
-    const whatIfSurplus = propSurplus + whatIfExtraTakeHome + whatIf.savingsBoost
+    const whatIfBoost = whatIfExtraTakeHome + whatIf.savingsBoost
+    const whatIfSurplus = propSurplus + whatIfBoost
+    const whatIfPhases: SurplusPhase[] = propPhases.map(p => ({ ...p, monthlySurplus: p.monthlySurplus + whatIfBoost }))
 
     const startNetWorth =
       profile.emergencyFund + profile.retirementBalance + profile.otherInvestments -
       (profile.creditCardDebt + profile.studentLoans + profile.carLoans + profile.otherDebt)
 
-    // Rule of 25: retirement target = 25× annual expenses
+    // Rule of 25: retirement target uses long-term (post-cost) expense level
     const currAnnualExpenses = (currMonthlyHousing + otherExpenses) * 12
-    const propAnnualExpenses = (propMonthlyHousing + otherExpenses + propScenarioCosts) * 12
+    const longTermPropExpenses = (propMonthlyHousing + otherExpenses) * 12 // no temporary costs in retirement target
     const retirementTargetCurr = calculateRetirementTarget(currAnnualExpenses / 12)
-    const retirementTargetProp = calculateRetirementTarget(propAnnualExpenses / 12)
+    const retirementTargetProp = calculateRetirementTarget(longTermPropExpenses / 12)
 
     const projCurr = projectNetWorth(startNetWorth, currSurplus, projYears)
-    const projProp = projectNetWorth(startNetWorth, propSurplus, projYears)
-    const projWhatIf = projectNetWorth(startNetWorth, whatIfSurplus, projYears)
+    const projProp = projectNetWorthPhased(startNetWorth, propPhases)
+    const projWhatIf = projectNetWorthPhased(startNetWorth, whatIfPhases)
 
     const retireCurr = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, currSurplus), retirementTargetCurr)
-    const retireProp = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, propSurplus), retirementTargetProp)
-    const retireWhatIf = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, whatIfSurplus), retirementTargetProp)
+    const retireProp = estimateRetirementAgePhased(profile.age, startNetWorth, propPhases, retirementTargetProp)
+    const retireWhatIf = estimateRetirementAgePhased(profile.age, startNetWorth, whatIfPhases, retirementTargetProp)
 
     const diff20 = (projProp[Math.min(20, projProp.length - 1)]?.netWorth ?? 0) - (projCurr[Math.min(20, projCurr.length - 1)]?.netWorth ?? 0)
     const diff30WhatIf = (projWhatIf[projWhatIf.length - 1]?.netWorth ?? 0) - (projProp[projProp.length - 1]?.netWorth ?? 0)
     const propWins = propSurplus >= currSurplus
 
-    // Opportunity cost: monthly surplus difference × compounded at 7% over 30 years
-    const surplusDiff = Math.abs(propSurplus - currSurplus)
+    // Opportunity cost: use long-term (post-cost) surplus diff to avoid overstating childcare impact
+    const longTermPropSurplus = propPhases[propPhases.length - 1]?.monthlySurplus ?? propSurplus
+    const surplusDiff = Math.abs(longTermPropSurplus - currSurplus)
     const opportunityCostFV = surplusDiff > 0
       ? surplusDiff * ((Math.pow(1 + 0.07 / 12, 30 * 12) - 1) / (0.07 / 12))
       : 0

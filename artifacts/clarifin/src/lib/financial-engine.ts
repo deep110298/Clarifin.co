@@ -108,6 +108,41 @@ export function projectNetWorth(
   return result;
 }
 
+/**
+ * Phased net worth projection — correctly handles temporary costs (childcare,
+ * tuition, time-off) that expire after a fixed number of years.
+ * Each phase specifies a monthly surplus and how many years it lasts.
+ */
+export interface SurplusPhase {
+  monthlySurplus: number;
+  years: number;
+}
+
+export function projectNetWorthPhased(
+  startingNetWorth: number,
+  phases: SurplusPhase[],
+  annualReturn = 0.07
+): { year: number; netWorth: number }[] {
+  const monthlyRate = annualReturn / 12;
+  const result: { year: number; netWorth: number }[] = [];
+  let balance = startingNetWorth;
+  let globalYear = 0;
+
+  result.push({ year: 0, netWorth: Math.round(balance) });
+
+  for (const phase of phases) {
+    for (let y = 0; y < phase.years; y++) {
+      for (let m = 0; m < 12; m++) {
+        balance = balance * (1 + monthlyRate) + phase.monthlySurplus;
+      }
+      globalYear++;
+      result.push({ year: globalYear, netWorth: Math.round(balance) });
+    }
+  }
+
+  return result;
+}
+
 // ── Mortgage payment ───────────────────────────────────────────────────────
 export function calculateMortgagePayment(
   principal: number,
@@ -143,6 +178,39 @@ export function estimateRetirementAge(
   while (balance < targetAmount && months < 600) {
     balance = balance * (1 + monthlyRate) + monthlySavings;
     months++;
+  }
+
+  return currentAge + Math.ceil(months / 12);
+}
+
+/**
+ * Phased retirement age estimator — correctly models scenarios where costs
+ * are temporary (childcare ends at year 5, school ends after graduation, etc.)
+ * The last phase is extended to fill the full 50-year (600 month) horizon.
+ */
+export function estimateRetirementAgePhased(
+  currentAge: number,
+  currentSavings: number,
+  phases: SurplusPhase[],
+  targetAmount: number,
+  annualReturn = 0.07
+): number {
+  const monthlyRate = annualReturn / 12;
+  let balance = currentSavings;
+  let months = 0;
+  const MAX_MONTHS = 600; // 50-year cap
+
+  for (let pi = 0; pi < phases.length; pi++) {
+    const phase = phases[pi];
+    // Last phase runs until target hit or cap reached
+    const phaseMonths = pi === phases.length - 1 ? MAX_MONTHS : phase.years * 12;
+    for (let m = 0; m < phaseMonths && months < MAX_MONTHS; m++) {
+      balance = balance * (1 + monthlyRate) + phase.monthlySurplus;
+      months++;
+      if (balance >= targetAmount) {
+        return currentAge + Math.ceil(months / 12);
+      }
+    }
   }
 
   return currentAge + Math.ceil(months / 12);

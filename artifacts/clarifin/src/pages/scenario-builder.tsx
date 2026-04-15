@@ -14,11 +14,12 @@ import {
   calculateMonthlyTakeHome,
   calculateMortgagePayment,
   calculateRetirementTarget,
-  projectNetWorth,
-  estimateRetirementAge,
+  projectNetWorth, projectNetWorthPhased,
+  estimateRetirementAge, estimateRetirementAgePhased,
   CITY_COL,
   formatCurrency,
   formatDiff,
+  type SurplusPhase,
 } from "@/lib/financial-engine";
 import { cn } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -386,6 +387,7 @@ export default function ScenarioBuilderPage() {
     let propMonthlyHousing = currMonthlyHousing; // default: housing unchanged
     let propScenarioCosts = 0; // extra monthly costs specific to this scenario
     let propSurplus = 0;
+    let retirePropPhases: SurplusPhase[] | null = null; // set for child/school/time-off
 
     if (scenarioType === "job-change") {
       const propIncome = Number(prop.income) || currIncome;
@@ -408,15 +410,20 @@ export default function ScenarioBuilderPage() {
 
     } else if (scenarioType === "child") {
       // Housing and income stay the same (unless on parental leave)
-      const leaveIncome = Number(prop.leaveIncome) || 0;
-      // Use average of leave year and normal year for steady-state approximation
-      // (first ~3 months leave, then back to work for most people)
+      const leaveIncome = Number(prop.leaveIncome) || 0; // 0 = fully unpaid leave
       const blendedAnnualIncome = leaveIncome * 0.25 + currIncome * 0.75;
       propTakeHome = calculateMonthlyTakeHome(blendedAnnualIncome, profile.filingStatus, currState);
       const monthlyChildcare = Number(prop.monthlyChildcare) || 0;
       const monthlyExtras = Number(prop.monthlyExtras) || 0;
       propScenarioCosts = monthlyChildcare + monthlyExtras;
       propSurplus = propTakeHome - currMonthlyHousing - otherExpenses - propScenarioCosts;
+      // Phased: Year 1 = leave, Yrs 2-5 = full income + childcare, Yrs 6+ = normal
+      const fullTH = calculateMonthlyTakeHome(currIncome, profile.filingStatus, currState);
+      retirePropPhases = [
+        { monthlySurplus: propSurplus,                                                              years: 1 },
+        { monthlySurplus: fullTH - currMonthlyHousing - otherExpenses - monthlyChildcare - monthlyExtras, years: 4 },
+        { monthlySurplus: fullTH - currMonthlyHousing - otherExpenses,                             years: 50 },
+      ];
 
     } else if (scenarioType === "school") {
       // Two-phase: during school income drops, tuition added; after school income rises
@@ -433,13 +440,18 @@ export default function ScenarioBuilderPage() {
       const surplusInSchool = takeHomeInSchool - currMonthlyHousing - otherExpenses - monthlyTuition;
       const surplusAfter = takeHomeAfter - currMonthlyHousing - otherExpenses;
 
-      // Blend for the 30-year view: weight by years
+      // Blend for the 30-year view table display: weight by years
       const totalYears = 30;
       const schoolWeight = Math.min(durationYears, totalYears) / totalYears;
       const afterWeight = 1 - schoolWeight;
       propTakeHome = takeHomeInSchool * schoolWeight + takeHomeAfter * afterWeight;
       propScenarioCosts = monthlyTuition * schoolWeight; // only paid during school
       propSurplus = surplusInSchool * schoolWeight + surplusAfter * afterWeight;
+      // Phased: in-school phase then post-graduation
+      retirePropPhases = [
+        { monthlySurplus: surplusInSchool, years: durationYears },
+        { monthlySurplus: surplusAfter,    years: 50 },
+      ];
 
     } else if (scenarioType === "time-off") {
       const months = Number(prop.months) || 6;
@@ -453,13 +465,18 @@ export default function ScenarioBuilderPage() {
       const surplusTimeOff = takeHomeTimeOff - currMonthlyHousing - otherExpenses - extraMonthlyCost;
       const surplusAfter = takeHomeAfter - currMonthlyHousing - otherExpenses;
 
-      // Blend for 30-year view
+      // Blend for 30-year view table display
       const totalMonths = 30 * 12;
       const offWeight = months / totalMonths;
       const afterWeight = 1 - offWeight;
       propTakeHome = takeHomeTimeOff * offWeight + takeHomeAfter * afterWeight;
       propScenarioCosts = extraMonthlyCost * offWeight;
       propSurplus = surplusTimeOff * offWeight + surplusAfter * afterWeight;
+      // Phased: time-off period then back to work
+      retirePropPhases = [
+        { monthlySurplus: surplusTimeOff, years: Math.max(1, Math.ceil(months / 12)) },
+        { monthlySurplus: surplusAfter,   years: 50 },
+      ];
 
     } else {
       // custom
@@ -474,17 +491,26 @@ export default function ScenarioBuilderPage() {
       profile.emergencyFund + profile.retirementBalance + profile.otherInvestments -
       (profile.creditCardDebt + profile.studentLoans + profile.carLoans + profile.otherDebt);
 
-    // Rule of 25: retirement target = 25× annual expenses
+    // One-time upfront costs reduce the proposed path's starting position
+    const oneTimeCostProp =
+      scenarioType === "child"      ? (Number(prop.oneTimeCost) || 0) :
+      scenarioType === "job-change" ? (Number(prop.movingCost)  || 0) :
+      scenarioType === "buy-home"   ? (Number(prop.downPayment) || 0) : 0;
+    const startNetWorthProp = startNetWorth - oneTimeCostProp;
+
+    // Rule of 25: retirement target uses long-term stable expenses only — no temporary costs
     const currAnnualExpenses = (currMonthlyHousing + otherExpenses) * 12;
-    const propAnnualExpenses = (propMonthlyHousing + otherExpenses + propScenarioCosts) * 12;
+    const propAnnualExpenses = (propMonthlyHousing + otherExpenses) * 12;
     const retirementTargetCurr = calculateRetirementTarget(currAnnualExpenses / 12);
     const retirementTargetProp = calculateRetirementTarget(propAnnualExpenses / 12);
 
     const projCurr = projectNetWorth(startNetWorth, currSurplus, 30);
-    const projProp = projectNetWorth(startNetWorth, propSurplus, 30);
+    const projProp = projectNetWorth(startNetWorthProp, propSurplus, 30);
 
     const retireCurr = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, currSurplus), retirementTargetCurr);
-    const retireProp = estimateRetirementAge(profile.age, startNetWorth, Math.max(0, propSurplus), retirementTargetProp);
+    const retireProp = retirePropPhases
+      ? estimateRetirementAgePhased(profile.age, startNetWorthProp, retirePropPhases, retirementTargetProp)
+      : estimateRetirementAge(profile.age, startNetWorthProp, Math.max(0, propSurplus), retirementTargetProp);
 
     const diff20yr = (projProp[20]?.netWorth ?? 0) - (projCurr[20]?.netWorth ?? 0);
     const propWins = propSurplus >= currSurplus;

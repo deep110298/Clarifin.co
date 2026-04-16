@@ -58,8 +58,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="px-6 py-6">
           <Link href="/">
             <div className="flex items-center gap-2.5 cursor-pointer">
-              <div className="w-8 h-8 rounded-lg bg-[#FACC15] flex items-center justify-center">
-                <img src={logoImg} alt="Clarifin" className="w-5 h-5 object-contain" />
+              <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+                <img src={logoImg} alt="Clarifin" className="w-full h-full object-cover" />
               </div>
               <span className="text-lg font-bold text-[#1A1A2E] tracking-tight">Clarifin</span>
             </div>
@@ -135,8 +135,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Mobile logo */}
           <Link href="/">
             <div className="lg:hidden flex items-center gap-2 cursor-pointer">
-              <div className="w-7 h-7 rounded-lg bg-[#FACC15] flex items-center justify-center">
-                <img src={logoImg} alt="Clarifin" className="w-4 h-4 object-contain" />
+              <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
+                <img src={logoImg} alt="Clarifin" className="w-full h-full object-cover" />
               </div>
               <span className="font-bold text-[#1A1A2E]">Clarifin</span>
             </div>

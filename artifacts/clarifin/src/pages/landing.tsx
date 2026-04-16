@@ -111,8 +111,8 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="flex items-center justify-between px-6 py-5 md:px-12 lg:px-24 bg-white border-b border-gray-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#FACC15] flex items-center justify-center">
-            <img src={logoImg} alt="Clarifin" className="w-5 h-5 object-contain" />
+          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+            <img src={logoImg} alt="Clarifin" className="w-full h-full object-cover" />
           </div>
           <span className="text-lg font-bold text-[#1A1A2E] tracking-tight">Clarifin</span>
         </div>
@@ -372,8 +372,8 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="py-28 text-center px-6">
         <div className="max-w-xl mx-auto space-y-7">
-          <div className="w-14 h-14 rounded-2xl bg-[#FACC15] flex items-center justify-center mx-auto">
-            <img src={logoImg} alt="Clarifin" className="w-8 h-8 object-contain" />
+          <div className="w-14 h-14 rounded-2xl overflow-hidden mx-auto">
+            <img src={logoImg} alt="Clarifin" className="w-full h-full object-cover" />
           </div>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1A1A2E]">Ready for clarity?</h2>
           <p className="text-lg text-gray-500 max-w-md mx-auto">
@@ -391,8 +391,8 @@ export default function LandingPage() {
       <footer className="px-6 py-10 md:px-12 lg:px-24 border-t border-gray-100 bg-white">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#FACC15] flex items-center justify-center">
-              <img src={logoImg} alt="Clarifin" className="w-4 h-4 object-contain" />
+            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
+              <img src={logoImg} alt="Clarifin" className="w-full h-full object-cover" />
             </div>
             <span className="text-base font-bold text-[#1A1A2E] tracking-tight">Clarifin</span>
           </div>

@@ -38,7 +38,6 @@ router.post("/billing/checkout", requireAuth, async (req: Request, res: Response
       mode: "subscription",
       payment_method_types: ["card"],
       customer: user?.stripeCustomerId ?? undefined,
-      customer_email: user?.stripeCustomerId ? undefined : user?.email,
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
       subscription_data: {

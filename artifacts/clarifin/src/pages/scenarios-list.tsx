@@ -102,7 +102,7 @@ export default function ScenariosListPage() {
             <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium text-amber-800">Free plan — up to 3 scenarios</p>
-              <p className="text-xs text-amber-600 mt-0.5">Upgrade to Plus ($12/mo) for unlimited scenarios and 30-year projections.</p>
+              <p className="text-xs text-amber-600 mt-0.5">Upgrade to Plus ($7/mo) for unlimited scenarios and 30-year projections.</p>
             </div>
             <button
               onClick={handleUpgrade}

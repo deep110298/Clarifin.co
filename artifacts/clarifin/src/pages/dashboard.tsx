@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link } from "wouter";
+import { useMemo, useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -7,7 +7,7 @@ import {
 import {
   TrendingUp, TrendingDown, DollarSign, PiggyBank,
   ArrowUpRight, ArrowDownRight, Plus, Search, SlidersHorizontal,
-  Sparkles, Briefcase, Home, GraduationCap, Baby, Plane, Sliders,
+  Sparkles, Briefcase, Home, GraduationCap, Baby, Plane, Sliders, PartyPopper, X,
 } from "lucide-react";
 import { AppLayout } from "@/components/app/AppLayout";
 import { useStore } from "@/lib/store";
@@ -48,6 +48,17 @@ export default function DashboardPage() {
   const [projYears, setProjYears] = useState<10 | 20 | 30>(30);
   const [showReal, setShowReal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
+  const [, navigate] = useLocation();
+
+  // Show success banner when returning from Stripe checkout
+  useEffect(() => {
+    if (window.location.search.includes("upgraded=1")) {
+      setShowUpgradeBanner(true);
+      // Clean the URL without a reload
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   // Always fetch fresh scenarios from the API so a page refresh shows correct data
   const { data: scenarios = [] } = useQuery({
@@ -134,6 +145,20 @@ export default function DashboardPage() {
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto space-y-6">
+
+        {/* Upgrade success banner */}
+        {showUpgradeBanner && (
+          <div className="flex items-center gap-3 bg-[#1A1A2E] text-white rounded-2xl px-5 py-4 shadow-sm">
+            <PartyPopper className="w-5 h-5 text-[#FACC15] shrink-0" />
+            <div className="flex-1">
+              <span className="font-semibold">Welcome to Clarifin Plus!</span>
+              <span className="text-white/70 text-sm ml-2">You now have unlimited scenarios, AI Advisor, and all Plus features. Your 7-day trial has started.</span>
+            </div>
+            <button onClick={() => setShowUpgradeBanner(false)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+              <X className="w-4 h-4 text-white/60" />
+            </button>
+          </div>
+        )}
 
         {/* Action bar */}
         <div className="flex items-center gap-3">

@@ -40,9 +40,17 @@ router.post("/billing/checkout", requireAuth, async (req: Request, res: Response
       customer: user?.stripeCustomerId ?? undefined,
       customer_email: user?.stripeCustomerId ? undefined : user?.email,
       line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
+      subscription_data: {
+        trial_period_days: 7,
+        metadata: { userId: req.clarifin!.userId, plan },
+      },
       success_url: `${process.env.FRONTEND_URL ?? "http://localhost:5173"}/app/dashboard?upgraded=1`,
-      cancel_url: `${process.env.FRONTEND_URL ?? "http://localhost:5173"}/app/dashboard`,
+      cancel_url: `${process.env.FRONTEND_URL ?? "http://localhost:5173"}/app/scenarios`,
       metadata: { userId: req.clarifin!.userId, plan },
+      custom_text: {
+        submit: { message: "You'll get a 7-day free trial. Cancel anytime." },
+      },
     })
     res.json({ url: session.url })
   } catch (err) {

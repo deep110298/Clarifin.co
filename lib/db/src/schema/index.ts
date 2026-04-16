@@ -35,6 +35,8 @@ export const profilesTable = pgTable("profiles", {
   debt: jsonb("debt").$type<{
     creditCard: number; studentLoans: number; carLoans: number; other: number;
   }>().notNull().default({ creditCard: 0, studentLoans: 0, carLoans: 0, other: 0 }),
+  annual401kContrib: integer("annual_401k_contrib").default(0).notNull(),
+  annualRothIraContrib: integer("annual_roth_ira_contrib").default(0).notNull(),
   isComplete: boolean("is_complete").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

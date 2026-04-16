@@ -20,7 +20,8 @@ export interface FinancialProfile {
   // Savings & debt
   emergencyFund: number;
   retirementBalance: number;
-  monthlyRetirementContrib: number;
+  annual401kContrib: number;
+  annualRothIraContrib: number;
   otherInvestments: number;
   creditCardDebt: number;
   studentLoans: number;
@@ -83,7 +84,8 @@ const DEFAULT_PROFILE: FinancialProfile = {
   otherExpenses: 0,
   emergencyFund: 0,
   retirementBalance: 0,
-  monthlyRetirementContrib: 0,
+  annual401kContrib: 0,
+  annualRothIraContrib: 0,
   otherInvestments: 0,
   creditCardDebt: 0,
   studentLoans: 0,
@@ -129,9 +131,15 @@ function save(key: string, value: unknown) {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfileState] = useState<FinancialProfile>(() =>
-    load("clarifin_profile", DEFAULT_PROFILE)
-  );
+  const [profile, setProfileState] = useState<FinancialProfile>(() => {
+    const stored = load<Partial<FinancialProfile> & { monthlyRetirementContrib?: number }>("clarifin_profile", DEFAULT_PROFILE);
+    // Migrate old monthlyRetirementContrib → annual401kContrib (approximate: monthly * 12)
+    if (stored.monthlyRetirementContrib !== undefined && stored.annual401kContrib === undefined) {
+      stored.annual401kContrib = (stored.monthlyRetirementContrib ?? 0) * 12;
+      stored.annualRothIraContrib = 0;
+    }
+    return { ...DEFAULT_PROFILE, ...stored };
+  });
   const [scenarios, setScenarios] = useState<Scenario[]>(() =>
     load("clarifin_scenarios", [])
   );

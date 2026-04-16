@@ -12,8 +12,10 @@ import {
 import { AppLayout } from "@/components/app/AppLayout";
 import { useStore } from "@/lib/store";
 import {
-  calculateMonthlyTakeHome,
-  projectNetWorth,
+  calculateMonthlyTakeHomeWith401k,
+  projectNetWorthWithGrowth,
+  calculateRetirementTarget,
+  estimateRetirementAge,
   formatCurrency,
 } from "@/lib/financial-engine";
 import { cn } from "@/lib/utils";
@@ -44,6 +46,7 @@ interface ApiScenario { id: string; name: string; type: string; createdAt: strin
 export default function DashboardPage() {
   const { profile } = useStore();
   const [projYears, setProjYears] = useState<10 | 20 | 30>(30);
+  const [showReal, setShowReal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   // Always fetch fresh scenarios from the API so a page refresh shows correct data
@@ -53,7 +56,12 @@ export default function DashboardPage() {
   });
 
   const monthlyTakeHome = useMemo(
-    () => calculateMonthlyTakeHome(profile.grossIncome, profile.filingStatus, profile.state),
+    () => calculateMonthlyTakeHomeWith401k(
+      profile.grossIncome,
+      profile.filingStatus,
+      profile.state,
+      profile.annual401kContrib || 0
+    ),
     [profile]
   );
 
@@ -62,19 +70,27 @@ export default function DashboardPage() {
     [profile]
   );
 
-  // Bug 2 fix: remove + profile.monthlyRetirementContrib (was double-counting retirement savings)
+  // Cash surplus after taxes, 401k deduction, and expenses
   const monthlySurplus = monthlyTakeHome - totalMonthlyExpenses;
+  // Total savings for projection = cash surplus + Roth IRA (post-tax, but still savings)
+  // 401k is already deducted from take-home so we add it back as retirement savings
+  const totalMonthlySavings = monthlySurplus + (profile.annual401kContrib || 0) / 12 + (profile.annualRothIraContrib || 0) / 12;
   const savingsRate = monthlyTakeHome > 0 ? ((monthlySurplus / monthlyTakeHome) * 100) : 0;
   const totalDebt = profile.creditCardDebt + profile.studentLoans + profile.carLoans + profile.otherDebt;
   const netWorth = profile.emergencyFund + profile.retirementBalance + profile.otherInvestments - totalDebt;
 
+  const retirementTarget = calculateRetirementTarget(totalMonthlyExpenses);
+  const retirementProgress = netWorth > 0 ? Math.min(100, Math.round((netWorth / retirementTarget) * 100)) : 0;
+  const estimatedRetireAge = estimateRetirementAge(profile.age, netWorth, Math.max(0, totalMonthlySavings), retirementTarget);
+  const yearsToRetire = Math.max(0, estimatedRetireAge - profile.age);
+
   const projData = useMemo(() => {
-    const current = projectNetWorth(netWorth, monthlySurplus, projYears);
+    const current = projectNetWorthWithGrowth(netWorth, totalMonthlySavings, projYears, 0.07, 0.03, 0.025, showReal);
     return current.map((pt) => ({
       year: `Year ${pt.year}`,
       value: pt.netWorth,
     }));
-  }, [netWorth, monthlySurplus, projYears]);
+  }, [netWorth, totalMonthlySavings, projYears, showReal]);
 
   const quickCards = [
     {
@@ -158,6 +174,45 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* Retirement Progress */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="font-bold text-[#1A1A2E]">Retirement Progress</h2>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">Rule of 25 · 4% safe withdrawal rate</p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-[#1A1A2E]">Age {estimatedRetireAge}</div>
+              <div className="text-xs text-[#9CA3AF]">Estimated retirement age</div>
+            </div>
+          </div>
+          <div className="space-y-2 mb-5">
+            <div className="flex justify-between text-sm">
+              <span className="text-[#6B7280]">{formatCurrency(Math.max(0, netWorth), true)} saved</span>
+              <span className="font-semibold text-[#1A1A2E]">{retirementProgress}% of goal</span>
+            </div>
+            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-[#FACC15] rounded-full transition-all duration-500" style={{ width: `${retirementProgress}%` }} />
+            </div>
+            <div className="flex justify-between text-xs text-[#9CA3AF]">
+              <span>$0</span>
+              <span>Target: {formatCurrency(retirementTarget, true)}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
+            {[
+              { label: "Monthly savings", value: formatCurrency(totalMonthlySavings, true) + "/mo" },
+              { label: "Current age", value: String(profile.age) },
+              { label: "Years to retire", value: yearsToRetire + " yrs" },
+            ].map(({ label, value }) => (
+              <div key={label} className="text-center">
+                <div className="text-sm font-bold text-[#1A1A2E]">{value}</div>
+                <div className="text-[10px] text-[#9CA3AF] mt-0.5">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Main content row */}
         <div className="grid lg:grid-cols-3 gap-5">
 
@@ -168,7 +223,7 @@ export default function DashboardPage() {
                 <h2 className="font-bold text-[#1A1A2E]">Net Worth Projection</h2>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">7% avg annual return assumed</p>
               </div>
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5 flex-wrap justify-end">
                 {PROJECTION_YEARS.map((y) => (
                   <button
                     key={y}
@@ -181,6 +236,26 @@ export default function DashboardPage() {
                     {y}yr
                   </button>
                 ))}
+                <div className="flex gap-1 ml-1">
+                  <button
+                    onClick={() => setShowReal(false)}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors",
+                      !showReal ? "bg-[#1A1A2E] text-white" : "bg-gray-100 text-[#9CA3AF] hover:bg-gray-200"
+                    )}
+                  >
+                    Nominal
+                  </button>
+                  <button
+                    onClick={() => setShowReal(true)}
+                    className={cn(
+                      "px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors",
+                      showReal ? "bg-[#1A1A2E] text-white" : "bg-gray-100 text-[#9CA3AF] hover:bg-gray-200"
+                    )}
+                  >
+                    Inflation-adj.
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -215,7 +290,7 @@ export default function DashboardPage() {
 
             <div className="mt-3 flex items-center justify-between text-xs text-[#9CA3AF]">
               <span className="font-semibold text-[#1A1A2E]">{formatCurrency(monthlySurplus)}/mo surplus</span>
-              <span>saving {savingsRate.toFixed(0)}% of income</span>
+              <span>saving {savingsRate.toFixed(0)}% of income · Assumes 3% annual salary growth</span>
             </div>
           </div>
 
@@ -234,10 +309,14 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {scenarios.length === 0 ? (
                   <div className="text-center py-6">
-                    <p className="text-sm text-[#9CA3AF] mb-3">No scenarios yet</p>
+                    <div className="w-10 h-10 rounded-xl bg-[#FFF9E6] flex items-center justify-center mx-auto mb-3">
+                      <Sparkles className="w-5 h-5 text-[#F59E0B]" />
+                    </div>
+                    <p className="text-sm font-semibold text-[#1A1A2E] mb-1">Model your next move</p>
+                    <p className="text-xs text-[#9CA3AF] mb-4 max-w-[160px] mx-auto">See exactly how a job change, home purchase, or career break affects your wealth.</p>
                     <Link href="/app/scenarios/new">
-                      <button className="bg-[#FACC15] text-[#1A1A2E] text-xs font-bold px-4 py-2 rounded-xl">
-                        + Create first
+                      <button className="bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] text-xs font-bold px-4 py-2 rounded-xl transition-colors">
+                        + Create first scenario
                       </button>
                     </Link>
                   </div>

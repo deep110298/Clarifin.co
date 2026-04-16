@@ -8,11 +8,11 @@ import {
 import {
   ArrowLeft, Trash2, TrendingUp, TrendingDown, Award, AlertCircle,
   Clock, PiggyBank, DollarSign, Zap, SlidersHorizontal, Sparkles, Pencil,
-  Share2, Copy, Check, X, Link as LinkIcon,
+  Share2, Copy, Check, X, Link as LinkIcon, Printer,
 } from "lucide-react"
 import { AppLayout } from "@/components/app/AppLayout"
 import {
-  calculateMonthlyTakeHome, calculateMortgagePayment, calculateRetirementTarget,
+  calculateMonthlyTakeHome, calculateMonthlyTakeHomeWith401k, calculateMortgagePayment, calculateRetirementTarget,
   projectNetWorth, projectNetWorthPhased, estimateRetirementAge, estimateRetirementAgePhased,
   formatCurrency, type SurplusPhase,
 } from "@/lib/financial-engine"
@@ -160,7 +160,7 @@ export default function ScenarioDetailPage() {
     const currState = (curr.state as string) || profile.state
     const otherExpenses = profile.transport + profile.food + profile.utilities + profile.healthcare + profile.otherExpenses
 
-    const currTakeHome = calculateMonthlyTakeHome(currIncome, profile.filingStatus, currState)
+    const currTakeHome = calculateMonthlyTakeHomeWith401k(currIncome, profile.filingStatus, currState, profile.annual401kContrib || 0)
     const currMonthlyHousing = Number(curr.monthlyHousing ?? curr.housing) || profile.housing
     const currSurplus = currTakeHome - currMonthlyHousing - otherExpenses
 
@@ -355,12 +355,19 @@ export default function ScenarioDetailPage() {
 
   return (
     <AppLayout>
+      <style>{`
+        @media print {
+          [data-no-print] { display: none !important; }
+          body { background: white !important; }
+          .shadow-sm { box-shadow: none !important; }
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto space-y-5">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <Link href="/app/scenarios">
-              <button className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+              <button data-no-print className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
                 <ArrowLeft className="w-4 h-4" />
               </button>
             </Link>
@@ -390,7 +397,13 @@ export default function ScenarioDetailPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" data-no-print>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1A1A2E] hover:bg-gray-100 px-3 py-2 rounded-xl transition-colors"
+            >
+              <Printer className="w-4 h-4" /> Export PDF
+            </button>
             <button
               onClick={handleOpenShare}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1A1A2E] hover:bg-gray-100 px-3 py-2 rounded-xl transition-colors"
@@ -408,7 +421,7 @@ export default function ScenarioDetailPage() {
 
         {/* Share modal */}
         {showShareModal && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowShareModal(false)}>
+          <div data-no-print className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowShareModal(false)}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
               <div className="flex items-start justify-between mb-5">
                 <div>
@@ -657,7 +670,7 @@ export default function ScenarioDetailPage() {
             </div>
 
             {/* ── What-If Explorer ── */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div data-no-print className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <button
                 onClick={() => setShowWhatIf(v => !v)}
                 className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
@@ -745,7 +758,7 @@ export default function ScenarioDetailPage() {
             </div>
 
             {/* ── Bottom actions ── */}
-            <div className="flex gap-3">
+            <div className="flex gap-3" data-no-print>
               <Link href="/app/scenarios/new">
                 <button className="flex items-center gap-2 border border-gray-200 hover:border-[#FACC15] hover:text-[#1A1A2E] text-gray-600 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
                   <DollarSign className="w-4 h-4" /> New scenario

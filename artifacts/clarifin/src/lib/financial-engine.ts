@@ -245,6 +245,60 @@ export const CITY_COL: Record<string, number> = {
   "Tampa, FL": 113,
 };
 
+// ── Salary growth + inflation projection ─────────────────────────────────
+
+export function projectNetWorthWithGrowth(
+  startingNetWorth: number,
+  initialMonthlySurplus: number,
+  years: number,
+  annualReturn = 0.07,
+  salaryGrowthRate = 0.03,
+  inflationRate = 0.025,
+  showReal = false
+): { year: number; netWorth: number }[] {
+  const monthlyRate = annualReturn / 12
+  const result: { year: number; netWorth: number }[] = []
+  let balance = startingNetWorth
+  let monthlySurplus = initialMonthlySurplus
+
+  for (let y = 0; y <= years; y++) {
+    const displayBalance = showReal
+      ? balance / Math.pow(1 + inflationRate, y)
+      : balance
+    result.push({ year: y, netWorth: Math.round(displayBalance) })
+    for (let m = 0; m < 12; m++) {
+      balance = balance * (1 + monthlyRate) + monthlySurplus
+    }
+    monthlySurplus = monthlySurplus * (1 + salaryGrowthRate)
+  }
+  return result
+}
+
+// ── 401k / IRA helpers ────────────────────────────────────────────────────
+
+/**
+ * Monthly take-home accounting for traditional 401k pre-tax contributions.
+ * 401k reduces federal taxable income; FICA and state tax are on full gross.
+ */
+export function calculateMonthlyTakeHomeWith401k(
+  gross: number,
+  filing: FilingStatus,
+  state: string,
+  annual401kContrib: number // pre-tax, reduces federal taxable income
+): number {
+  const adjustedGross = Math.max(0, gross - annual401kContrib)
+  const federal = calculateFederalTax(adjustedGross, filing)
+  const fica = calculateFICA(gross) // FICA always on full gross
+  const stateTax = calculateStateTax(gross, state) // simplified: state on full gross
+  // Net = gross - 401k - all taxes, divided by 12
+  return Math.round((gross - annual401kContrib - federal - fica - stateTax) / 12)
+}
+
+/** 2024 IRS contribution limits (with age-50+ catch-up) */
+export function calculate401kAnnualLimit(age: number): number {
+  return age >= 50 ? 30500 : 23000
+}
+
 // ── Format helpers ─────────────────────────────────────────────────────────
 export function formatCurrency(n: number, compact = false): string {
   if (compact && Math.abs(n) >= 1_000_000) {

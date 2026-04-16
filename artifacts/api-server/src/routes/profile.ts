@@ -28,7 +28,8 @@ const profileBodySchema = z.object({
   savings: z.object({
     emergency: dollar,
     retirement: dollar,
-    monthlyContrib: dollar,
+    annual401k: dollar.optional().default(0),
+    rothIra: dollar.optional().default(0),
     investments: dollar,
   }),
   debt: z.object({
@@ -63,7 +64,13 @@ router.put("/profile", requireAuth, async (req: Request, res: Response, next: Ne
   }
 
   try {
-    const data = { ...parsed.data, userId: req.clarifin!.userId, isComplete: true }
+    const data = {
+      ...parsed.data,
+      userId: req.clarifin!.userId,
+      isComplete: true,
+      annual401kContrib: parsed.data.savings.annual401k ?? 0,
+      annualRothIraContrib: parsed.data.savings.rothIra ?? 0,
+    }
     const [profile] = await db.insert(profilesTable)
       .values(data)
       .onConflictDoUpdate({ target: profilesTable.userId, set: { ...data, updatedAt: new Date() } })

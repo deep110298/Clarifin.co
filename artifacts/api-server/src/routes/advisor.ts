@@ -82,7 +82,7 @@ ${profile ? `
 - State: ${profile.state}
 - Age: ${profile.age}
 - Monthly expenses: housing $${expenses?.housing ?? 0}, transport $${expenses?.transport ?? 0}, food $${expenses?.food ?? 0}, utilities $${expenses?.utilities ?? 0}, healthcare $${expenses?.healthcare ?? 0}, other $${expenses?.other ?? 0}
-- Savings: emergency fund $${savings?.emergency ?? 0}, retirement $${savings?.retirement ?? 0}, monthly 401k contribution $${savings?.monthlyContrib ?? 0}, other investments $${savings?.investments ?? 0}
+- Savings: emergency fund $${savings?.emergency ?? 0}, retirement $${savings?.retirement ?? 0}, annual 401k contribution $${profile.annual401kContrib ?? 0}, annual Roth IRA contribution $${profile.annualRothIraContrib ?? 0}, other investments $${savings?.investments ?? 0}
 - Debt: credit card $${debt?.creditCard ?? 0}, student loans $${debt?.studentLoans ?? 0}, car loans $${debt?.carLoans ?? 0}, other $${debt?.other ?? 0}
 ` : "Profile not yet set up — ask the user to complete their financial profile for personalized advice."}
 

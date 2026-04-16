@@ -22,7 +22,7 @@ interface ProfileData {
   state: string
   age: number
   expenses: { housing: number; transport: number; food: number; utilities: number; healthcare: number; other: number }
-  savings: { emergency: number; retirement: number; monthlyContrib: number; investments: number }
+  savings: { emergency: number; retirement: number; annual401k: number; rothIra: number; investments: number }
   debt: { creditCard: number; studentLoans: number; carLoans: number; other: number }
 }
 
@@ -32,7 +32,7 @@ const DEFAULT: ProfileData = {
   state: "TX",
   age: 30,
   expenses: { housing: 1800, transport: 400, food: 600, utilities: 200, healthcare: 150, other: 300 },
-  savings: { emergency: 10000, retirement: 25000, monthlyContrib: 500, investments: 5000 },
+  savings: { emergency: 10000, retirement: 25000, annual401k: 6000, rothIra: 0, investments: 5000 },
   debt: { creditCard: 0, studentLoans: 0, carLoans: 0, other: 0 },
 }
 
@@ -98,7 +98,17 @@ export default function ProfileSetupPage() {
   })
 
   useEffect(() => {
-    if (existing) setData(existing as ProfileData)
+    if (existing) {
+      const loaded = existing as ProfileData & { savings: { monthlyContrib?: number } }
+      // Backwards compat: old profiles stored monthlyContrib, new ones store annual401k/rothIra
+      const savings = {
+        ...DEFAULT.savings,
+        ...loaded.savings,
+        annual401k: loaded.savings.annual401k ?? 0,
+        rothIra: loaded.savings.rothIra ?? 0,
+      }
+      setData({ ...loaded, savings })
+    }
   }, [existing])
 
   const mutation = useMutation({
@@ -119,7 +129,8 @@ export default function ProfileSetupPage() {
         otherExpenses: body.expenses.other,
         emergencyFund: body.savings.emergency,
         retirementBalance: body.savings.retirement,
-        monthlyRetirementContrib: body.savings.monthlyContrib,
+        annual401kContrib: body.savings.annual401k,
+        annualRothIraContrib: body.savings.rothIra,
         otherInvestments: body.savings.investments,
         creditCardDebt: body.debt.creditCard,
         studentLoans: body.debt.studentLoans,
@@ -288,7 +299,8 @@ export default function ProfileSetupPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <NumberInput label="Emergency Fund" value={data.savings.emergency} onChange={v => setNested("savings", "emergency", v)} hint="Target: 3–6 months expenses" />
                   <NumberInput label="401k / IRA Balance" value={data.savings.retirement} onChange={v => setNested("savings", "retirement", v)} />
-                  <NumberInput label="Monthly Retirement Contribution" value={data.savings.monthlyContrib} onChange={v => setNested("savings", "monthlyContrib", v)} hint="Including employer match" />
+                  <NumberInput label="Annual 401k Contribution" value={data.savings.annual401k} onChange={v => setNested("savings", "annual401k", v)} hint="Pre-tax. 2024 limit: $23,000 ($30,500 if 50+)" />
+                  <NumberInput label="Annual Roth IRA Contribution" value={data.savings.rothIra} onChange={v => setNested("savings", "rothIra", v)} hint="Post-tax. 2024 limit: $7,000 ($8,000 if 50+)" />
                   <NumberInput label="Other Investments" value={data.savings.investments} onChange={v => setNested("savings", "investments", v)} hint="Brokerage, crypto, etc." />
                 </div>
               </div>

@@ -37,6 +37,12 @@ function ClerkTokenBridge() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isLoaded } = useAuth()
+  if (!isLoaded) {
+    return <div className="min-h-screen bg-[#F8F9FC] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#FACC15] border-t-transparent rounded-full animate-spin" />
+    </div>
+  }
   return (
     <>
       <SignedIn>{children}</SignedIn>

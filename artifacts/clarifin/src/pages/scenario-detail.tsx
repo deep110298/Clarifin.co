@@ -88,6 +88,31 @@ export default function ScenarioDetailPage() {
     enabled: !!id,
   })
 
+  // Free plan: only the first (oldest) scenario is fully viewable
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => customFetch<{ plan: string; profileComplete: boolean }>("/api/me"),
+  })
+  const { data: allScenarios = [] } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => customFetch<{ id: string; createdAt: string }[]>("/api/scenarios"),
+  })
+  const isFree = me?.plan === "free"
+  // Sort oldest first — free users can view the first one they created
+  const sortedIds = [...allScenarios].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map(s => s.id)
+  const isLocked = isFree && sortedIds.length > 1 && sortedIds[0] !== id
+
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true)
+    try {
+      const r = await customFetch<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan: "plus" }) })
+      if (r.url) window.location.href = r.url
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }
+
   const deleteMutation = useMutation({
     mutationFn: () => customFetch(`/api/scenarios/${id}`, { method: "DELETE" }),
     onSuccess: () => {
@@ -482,7 +507,41 @@ export default function ScenarioDetailPage() {
           </div>
         )}
 
-        {analysis && (
+        {/* ── Paywall overlay for locked scenarios ── */}
+        {isLocked && (
+          <div className="relative">
+            {/* Blurred preview */}
+            <div className="pointer-events-none select-none blur-sm opacity-40 space-y-5">
+              <div className="rounded-2xl border border-yellow-200 bg-[#FFF9E6] p-5 h-28" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[1,2,3,4].map(i => <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 h-24" />)}
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 p-6 h-64" />
+            </div>
+            {/* Upgrade prompt */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 max-w-sm w-full text-center mx-4">
+                <div className="w-14 h-14 bg-[#FFF9E6] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-7 h-7 text-[#F59E0B]" />
+                </div>
+                <h2 className="text-lg font-bold text-[#1A1A2E] mb-2">Unlock full analysis</h2>
+                <p className="text-sm text-gray-500 mb-6">
+                  You've built this scenario — upgrade to Plus to see the full breakdown, retirement projection, net worth chart, and what-if explorer.
+                </p>
+                <button
+                  onClick={handleUpgrade}
+                  disabled={checkoutLoading}
+                  className="w-full bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] font-bold py-3 rounded-xl transition-colors disabled:opacity-60 mb-3"
+                >
+                  {checkoutLoading ? "Loading..." : "Upgrade to Plus — $7/mo"}
+                </button>
+                <p className="text-xs text-gray-400">7-day free trial · Cancel anytime</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {analysis && !isLocked && (
           <>
             {/* ── Verdict card ── */}
             <div className={cn(

@@ -56,15 +56,6 @@ router.get("/scenarios/:id", requireAuth, async (req: Request, res: Response, ne
 
 // POST /api/scenarios
 router.post("/scenarios", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  // Free plan: limit to 3 scenarios
-  if (req.clarifin!.plan === "free") {
-    const existing = await db.select().from(scenariosTable).where(eq(scenariosTable.userId, req.clarifin!.userId))
-    if (existing.length >= 3) {
-      res.status(402).json({ error: "Free plan limited to 3 scenarios. Upgrade to Plus for unlimited." })
-      return
-    }
-  }
-
   const parsed = scenarioBodySchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid scenario data", details: parsed.error.flatten() })

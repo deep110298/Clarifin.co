@@ -5,7 +5,7 @@ import { customFetch } from "@workspace/api-client-react"
 import { AppLayout } from "@/components/app/AppLayout"
 import {
   Plus, GitCompare, ArrowRight, Briefcase, Home, GraduationCap,
-  Baby, Plane, Sliders, Trash2, AlertCircle, Zap,
+  Baby, Plane, Sliders, Trash2, AlertCircle, Zap, Sparkles,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -67,7 +67,6 @@ export default function ScenariosListPage() {
   }
 
   const isFree = me?.plan === "free"
-  const atLimit = isFree && scenarios.length >= 3
 
   return (
     <AppLayout>
@@ -86,30 +85,28 @@ export default function ScenariosListPage() {
                 </button>
               </Link>
             )}
-            {!atLimit && (
-              <Link href="/app/scenarios/new">
-                <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-bold transition-colors">
-                  <Plus className="w-4 h-4" /> New scenario
-                </button>
-              </Link>
-            )}
+            <Link href="/app/scenarios/new">
+              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-bold transition-colors">
+                <Plus className="w-4 h-4" /> New scenario
+              </button>
+            </Link>
           </div>
         </div>
 
-        {/* Free plan banner */}
-        {isFree && (
-          <><div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        {/* Free plan banner — shown when they have scenarios they can't fully view */}
+        {isFree && scenarios.length > 1 && (
+          <><div className="flex items-start gap-3 bg-[#1A1A2E] rounded-2xl p-4">
+            <Sparkles className="w-5 h-5 text-[#FACC15] shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-amber-800">Free plan — up to 3 scenarios</p>
-              <p className="text-xs text-amber-600 mt-0.5">Upgrade to Plus ($7/mo) for unlimited scenarios and 30-year projections.</p>
+              <p className="text-sm font-medium text-white">Unlock full analysis with Plus</p>
+              <p className="text-xs text-white/60 mt-0.5">You can build unlimited scenarios free. Upgrade to $7/mo to view the full breakdown, charts, and retirement projections on all of them.</p>
             </div>
             <button
               onClick={handleUpgrade}
               disabled={checkoutLoading}
-              className="shrink-0 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl font-medium transition-colors disabled:opacity-60"
+              className="shrink-0 text-xs bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-3 py-1.5 rounded-xl font-bold transition-colors disabled:opacity-60"
             >
-              {checkoutLoading ? "Loading..." : "Upgrade"}
+              {checkoutLoading ? "Loading..." : "Upgrade — $7/mo"}
             </button>
           </div>
           {checkoutError && <p className="text-xs text-red-500 mt-2 px-1">{checkoutError}</p>}

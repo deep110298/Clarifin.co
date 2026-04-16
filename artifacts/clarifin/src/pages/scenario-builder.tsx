@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import {
-  ArrowRight, Briefcase, Home, GraduationCap, Baby, Plane, Sliders,
+  ArrowRight, Briefcase, Home, GraduationCap, Baby, Plane, Sliders, Sparkles,
   TrendingUp, TrendingDown, Award, AlertCircle,
 } from "lucide-react";
 import {
@@ -612,6 +612,29 @@ export default function ScenarioBuilderPage() {
     saveMutation.mutate();
   };
 
+  // ── Plan gating ───────────────────────────────────────────────────────────
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => customFetch<{ plan: string; profileComplete: boolean }>("/api/me"),
+  });
+  const { data: existingScenarios = [] } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => customFetch<{ id: string }[]>("/api/scenarios"),
+  });
+  const isFree = me?.plan === "free";
+  // Lock analysis if free user already has at least 1 saved scenario
+  const analysisLocked = isFree && existingScenarios.length >= 1;
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true);
+    try {
+      const r = await customFetch<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan: "plus" }) });
+      if (r.url) window.location.href = r.url;
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto space-y-6">
@@ -686,7 +709,7 @@ export default function ScenarioBuilderPage() {
         </div>
 
         {/* Live analysis */}
-        <div className="grid lg:grid-cols-3 gap-5">
+        <div className={cn("grid lg:grid-cols-3 gap-5", analysisLocked && "relative")}>
           {/* Comparison table */}
           <div className="lg:col-span-1 bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h2 className="font-semibold text-[#1A1A2E] mb-4 text-sm">Monthly Breakdown</h2>
@@ -818,6 +841,29 @@ export default function ScenarioBuilderPage() {
             </p>
           </div>
         </div>
+
+        {/* Paywall overlay over analysis */}
+        {analysisLocked && (
+          <div className="absolute inset-0 backdrop-blur-sm bg-white/60 rounded-xl flex items-center justify-center z-10">
+            <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 max-w-sm w-full text-center mx-4">
+              <div className="w-14 h-14 bg-[#FFF9E6] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-7 h-7 text-[#F59E0B]" />
+              </div>
+              <h2 className="text-lg font-bold text-[#1A1A2E] mb-2">Unlock the full analysis</h2>
+              <p className="text-sm text-gray-500 mb-6">
+                Save this scenario and see the full 30-year projection, retirement age, and what-if explorer with Plus.
+              </p>
+              <button
+                onClick={handleUpgrade}
+                disabled={checkoutLoading}
+                className="w-full bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] font-bold py-3 rounded-xl transition-colors disabled:opacity-60 mb-3"
+              >
+                {checkoutLoading ? "Loading..." : "Upgrade to Plus — $7/mo"}
+              </button>
+              <p className="text-xs text-gray-400">7-day free trial · Cancel anytime</p>
+            </div>
+          </div>
+        )}
 
         {saveError && (
           <p className="text-sm text-red-500">{saveError}</p>

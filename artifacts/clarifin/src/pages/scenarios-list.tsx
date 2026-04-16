@@ -78,13 +78,22 @@ export default function ScenariosListPage() {
             <h1 className="text-2xl font-bold text-[#1A1A2E]">Your Scenarios</h1>
             <p className="text-sm text-gray-500 mt-0.5">Model any life decision and compare paths side by side.</p>
           </div>
-          {!atLimit && (
-            <Link href="/app/scenarios/new">
-              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-bold transition-colors">
-                <Plus className="w-4 h-4" /> New scenario
-              </button>
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            {scenarios.length >= 2 && (
+              <Link href="/app/scenarios/compare">
+                <button className="flex items-center gap-2 border border-gray-200 hover:border-[#FACC15] text-gray-600 hover:text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-medium transition-colors bg-white">
+                  <GitCompare className="w-4 h-4" /> Compare
+                </button>
+              </Link>
+            )}
+            {!atLimit && (
+              <Link href="/app/scenarios/new">
+                <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-bold transition-colors">
+                  <Plus className="w-4 h-4" /> New scenario
+                </button>
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Free plan banner */}

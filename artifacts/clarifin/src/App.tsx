@@ -10,6 +10,7 @@ import LandingPage from "@/pages/landing"
 import DashboardPage from "@/pages/dashboard"
 import ScenarioBuilderPage from "@/pages/scenario-builder"
 import ScenarioDetailPage from "@/pages/scenario-detail"
+import ScenarioComparePage from "@/pages/scenario-compare"
 import ScenariosListPage from "@/pages/scenarios-list"
 import AdvisorPage from "@/pages/advisor"
 import ProfileSetupPage from "@/pages/profile-setup"
@@ -60,6 +61,9 @@ function AppRoutes() {
       </Route>
       <Route path="/app/scenarios/new">
         <ProtectedRoute><ScenarioBuilderPage /></ProtectedRoute>
+      </Route>
+      <Route path="/app/scenarios/compare">
+        <ProtectedRoute><ScenarioComparePage /></ProtectedRoute>
       </Route>
       <Route path="/app/scenarios/:id">
         <ProtectedRoute><ScenarioDetailPage /></ProtectedRoute>

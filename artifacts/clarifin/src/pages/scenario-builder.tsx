@@ -22,7 +22,7 @@ import {
   type SurplusPhase,
 } from "@/lib/financial-engine";
 import { cn } from "@/lib/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
 
 const SCENARIO_TYPES: { id: ScenarioType; label: string; icon: React.ElementType; desc: string }[] = [
@@ -635,6 +635,32 @@ export default function ScenarioBuilderPage() {
     }
   };
 
+  // Show upgrade wall immediately if free user already has a scenario
+  if (analysisLocked) {
+    return (
+      <AppLayout>
+        <div className="max-w-md mx-auto mt-20 text-center px-4">
+          <div className="w-16 h-16 bg-[#FFF9E6] rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Sparkles className="w-8 h-8 text-[#FACC15]" />
+          </div>
+          <h1 className="text-2xl font-bold text-[#1A1A2E] mb-3">Unlock unlimited scenarios</h1>
+          <p className="text-sm text-gray-500 mb-8">
+            You're on the free plan. Upgrade to Plus to build and analyze unlimited scenarios with full 30-year projections, retirement age estimates, and comparison tools.
+          </p>
+          <button
+            onClick={handleUpgrade}
+            disabled={checkoutLoading}
+            className="w-full bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] font-bold py-3 rounded-xl transition-colors disabled:opacity-60 mb-3 text-sm"
+          >
+            {checkoutLoading ? "Loading..." : "Upgrade to Plus — $7/mo"}
+          </button>
+          <p className="text-xs text-gray-400 mb-6">7-day free trial · Cancel anytime</p>
+          <a href="/app/scenarios" className="text-sm text-gray-400 hover:text-gray-600 underline">← Back to my scenarios</a>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto space-y-6">
@@ -709,7 +735,7 @@ export default function ScenarioBuilderPage() {
         </div>
 
         {/* Live analysis */}
-        <div className={cn("grid lg:grid-cols-3 gap-5", analysisLocked && "relative")}>
+        <div className="grid lg:grid-cols-3 gap-5">
           {/* Comparison table */}
           <div className="lg:col-span-1 bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h2 className="font-semibold text-[#1A1A2E] mb-4 text-sm">Monthly Breakdown</h2>
@@ -841,29 +867,6 @@ export default function ScenarioBuilderPage() {
             </p>
           </div>
         </div>
-
-        {/* Paywall overlay over analysis */}
-        {analysisLocked && (
-          <div className="absolute inset-0 backdrop-blur-sm bg-white/60 rounded-xl flex items-center justify-center z-10">
-            <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 max-w-sm w-full text-center mx-4">
-              <div className="w-14 h-14 bg-[#FFF9E6] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-7 h-7 text-[#F59E0B]" />
-              </div>
-              <h2 className="text-lg font-bold text-[#1A1A2E] mb-2">Unlock the full analysis</h2>
-              <p className="text-sm text-gray-500 mb-6">
-                Save this scenario and see the full 30-year projection, retirement age, and what-if explorer with Plus.
-              </p>
-              <button
-                onClick={handleUpgrade}
-                disabled={checkoutLoading}
-                className="w-full bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] font-bold py-3 rounded-xl transition-colors disabled:opacity-60 mb-3"
-              >
-                {checkoutLoading ? "Loading..." : "Upgrade to Plus — $7/mo"}
-              </button>
-              <p className="text-xs text-gray-400">7-day free trial · Cancel anytime</p>
-            </div>
-          </div>
-        )}
 
         {saveError && (
           <p className="text-sm text-red-500">{saveError}</p>

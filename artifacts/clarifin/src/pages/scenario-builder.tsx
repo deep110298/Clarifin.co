@@ -655,7 +655,7 @@ export default function ScenarioBuilderPage() {
             {checkoutLoading ? "Loading..." : "Upgrade to Plus — $7/mo"}
           </button>
           <p className="text-xs text-gray-400 mb-6">7-day free trial · Cancel anytime</p>
-          <a href="/app/scenarios" className="text-sm text-gray-400 hover:text-gray-600 underline">← Back to my scenarios</a>
+          <button onClick={() => navigate("/app/scenarios")} className="text-sm text-gray-400 hover:text-gray-600 underline">← Back to my scenarios</button>
         </div>
       </AppLayout>
     );
@@ -883,11 +883,12 @@ export default function ScenarioBuilderPage() {
             {saveMutation.isPending ? "Saving..." : "Save scenario"}
             {!saveMutation.isPending && <ArrowRight className="w-4 h-4" />}
           </button>
-          <a href="/app/advisor">
-            <button className="flex items-center gap-2 bg-[#1A1A2E] hover:bg-[#1a2e40] text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors">
-              Ask AI advisor
-            </button>
-          </a>
+          <button
+            onClick={() => navigate("/app/advisor")}
+            className="flex items-center gap-2 bg-[#1A1A2E] hover:bg-[#1a2e40] text-white px-6 py-2.5 rounded-lg font-medium text-sm transition-colors"
+          >
+            Ask AI advisor
+          </button>
         </div>
       </div>
     </AppLayout>

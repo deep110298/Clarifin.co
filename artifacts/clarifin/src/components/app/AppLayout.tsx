@@ -1,14 +1,14 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, GitCompare, MessageSquare, User,
-  LogOut, Settings, Zap,
+  LogOut, Settings, Zap, ChevronDown, UserCircle,
 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "./UserAvatar";
 import { customFetch } from "@workspace/api-client-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
 
 const NAV = [
@@ -24,6 +24,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { signOut } = useClerk();
   const { profile, resetStore } = useStore();
   const [upgrading, setUpgrading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Redirect to profile setup if profile isn't complete yet (skip for profile page itself)
   useEffect(() => {
@@ -153,9 +165,47 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 + Add new
               </button>
             </Link>
-            <Link href="/app/profile">
-              <UserAvatar size="md" className="cursor-pointer ring-2 ring-transparent hover:ring-[#FACC15] transition-all" />
-            </Link>
+
+            {/* Profile dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen((o) => !o)}
+                className="flex items-center gap-1.5 focus:outline-none"
+              >
+                <UserAvatar size="md" className="ring-2 ring-transparent hover:ring-[#FACC15] transition-all" />
+                <ChevronDown className={cn("w-3.5 h-3.5 text-gray-400 transition-transform", dropdownOpen && "rotate-180")} />
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                  {/* User info header */}
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-[#1A1A2E] truncate">{displayName}</p>
+                    <p className="text-xs text-gray-400 truncate">{user?.emailAddresses?.[0]?.emailAddress}</p>
+                  </div>
+
+                  {/* Menu items */}
+                  <div className="py-1.5">
+                    <Link href="/app/account">
+                      <button
+                        onClick={() => setDropdownOpen(false)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#1A1A2E] transition-colors"
+                      >
+                        <UserCircle className="w-4 h-4 shrink-0" />
+                        Account details
+                      </button>
+                    </Link>
+                    <button
+                      onClick={() => { resetStore(); signOut({ redirectUrl: "/" }); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 shrink-0" />
+                      Log out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

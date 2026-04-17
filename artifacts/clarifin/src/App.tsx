@@ -17,6 +17,7 @@ import ProfileSetupPage from "@/pages/profile-setup"
 import SignInPage from "@/pages/sign-in"
 import SignUpPage from "@/pages/sign-up"
 import SharedScenarioPage from "@/pages/shared-scenario"
+import AccountPage from "@/pages/account"
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -64,6 +65,9 @@ function AppRoutes() {
       </Route>
       <Route path="/app/profile">
         <ProtectedRoute><ProfileSetupPage /></ProtectedRoute>
+      </Route>
+      <Route path="/app/account">
+        <ProtectedRoute><AccountPage /></ProtectedRoute>
       </Route>
       <Route path="/app/scenarios/new">
         <ProtectedRoute><ScenarioBuilderPage /></ProtectedRoute>

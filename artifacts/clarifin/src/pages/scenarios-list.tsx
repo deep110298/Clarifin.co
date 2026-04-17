@@ -174,14 +174,12 @@ export default function ScenariosListPage() {
             })}
 
             {/* Add new card */}
-            {!atLimit && (
-              <Link href="/app/scenarios/new">
-                <div className="flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#FACC15]/40 hover:bg-[#FACC15]/5 p-5 h-full min-h-36 cursor-pointer transition-all group">
-                  <Plus className="w-8 h-8 text-gray-300 group-hover:text-[#FACC15] transition-colors" />
-                  <span className="text-sm text-gray-400 group-hover:text-[#FACC15] font-medium transition-colors">New scenario</span>
-                </div>
-              </Link>
-            )}
+            <Link href="/app/scenarios/new">
+              <div className="flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#FACC15]/40 hover:bg-[#FACC15]/5 p-5 h-full min-h-36 cursor-pointer transition-all group">
+                <Plus className="w-8 h-8 text-gray-300 group-hover:text-[#FACC15] transition-colors" />
+                <span className="text-sm text-gray-400 group-hover:text-[#FACC15] font-medium transition-colors">New scenario</span>
+              </div>
+            </Link>
           </div>
         )}
 

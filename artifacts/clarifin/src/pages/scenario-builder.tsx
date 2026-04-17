@@ -351,9 +351,32 @@ export default function ScenarioBuilderPage() {
   const { profile, addScenario } = useStore();
   const queryClient = useQueryClient();
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const [scenarioType, setScenarioType] = useState<ScenarioType>("job-change");
   const [scenarioName, setScenarioName] = useState("My new scenario");
+
+  // ── Plan gating (hooks must be at top level, before any early returns) ─────
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => customFetch<{ plan: string; profileComplete: boolean }>("/api/me"),
+  });
+  const { data: existingScenarios = [] } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => customFetch<{ id: string }[]>("/api/scenarios"),
+  });
+  const isFree = me?.plan === "free";
+  const analysisLocked = isFree && existingScenarios.length >= 1;
+
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true);
+    try {
+      const r = await customFetch<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan: "plus" }) });
+      if (r.url) window.location.href = r.url;
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   const defaults = useMemo(
     () => getDefaultState(scenarioType, { grossIncome: profile.grossIncome, housing: profile.housing, state: profile.state }),
@@ -610,29 +633,6 @@ export default function ScenarioBuilderPage() {
   const handleSave = () => {
     setSaveError(null);
     saveMutation.mutate();
-  };
-
-  // ── Plan gating ───────────────────────────────────────────────────────────
-  const { data: me } = useQuery({
-    queryKey: ["me"],
-    queryFn: () => customFetch<{ plan: string; profileComplete: boolean }>("/api/me"),
-  });
-  const { data: existingScenarios = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => customFetch<{ id: string }[]>("/api/scenarios"),
-  });
-  const isFree = me?.plan === "free";
-  // Lock analysis if free user already has at least 1 saved scenario
-  const analysisLocked = isFree && existingScenarios.length >= 1;
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const handleUpgrade = async () => {
-    setCheckoutLoading(true);
-    try {
-      const r = await customFetch<{ url: string }>("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan: "plus" }) });
-      if (r.url) window.location.href = r.url;
-    } finally {
-      setCheckoutLoading(false);
-    }
   };
 
   // Show upgrade wall immediately if free user already has a scenario

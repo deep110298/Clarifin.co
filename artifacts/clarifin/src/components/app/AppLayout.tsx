@@ -28,14 +28,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!dropdownOpen) return;
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    // Use setTimeout so this listener doesn't fire on the same click that opened the dropdown
+    const timer = setTimeout(() => {
+      document.addEventListener("click", handleClickOutside);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   // Redirect to profile setup if profile isn't complete yet (skip for profile page itself)
   useEffect(() => {

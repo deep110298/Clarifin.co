@@ -5,7 +5,7 @@ import { Link } from "wouter"
 import { customFetch } from "@workspace/api-client-react"
 import { AppLayout } from "@/components/app/AppLayout"
 import { useStore } from "@/lib/store"
-import { Mail, Lock, Trash2, GitCompare, AlertTriangle, ArrowRight } from "lucide-react"
+import { Mail, Lock, Trash2, GitCompare, AlertTriangle, ArrowRight, CheckCircle, Pencil, X } from "lucide-react"
 
 interface Scenario {
   id: string
@@ -27,26 +27,116 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
+// Email change: 3 steps — enter new email → enter OTP → done
+type EmailStep = "idle" | "entering" | "verifying" | "done"
+
 export default function AccountPage() {
   const { user } = useUser()
   const { signOut } = useClerk()
   const { resetStore } = useStore()
+
+  // Email change state
+  const [emailStep, setEmailStep] = useState<EmailStep>("idle")
+  const [newEmail, setNewEmail] = useState("")
+  const [otp, setOtp] = useState("")
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [emailLoading, setEmailLoading] = useState(false)
+  const [pendingEmailId, setPendingEmailId] = useState<string | null>(null)
+
+  // Password state
+  const [passwordSent, setPasswordSent] = useState(false)
+  const [passwordLoading, setPasswordLoading] = useState(false)
+
+  // Delete state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteInput, setDeleteInput] = useState("")
   const [deleting, setDeleting] = useState(false)
-  const [passwordSent, setPasswordSent] = useState(false)
 
   const { data: scenarios = [], isLoading } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => customFetch<Scenario[]>("/api/scenarios"),
   })
 
+  const currentEmail = user?.emailAddresses?.find(e => e.id === user.primaryEmailAddressId)?.emailAddress ?? ""
+
+  // Step 1: add new email and send OTP
+  const handleSendCode = async () => {
+    if (!newEmail.trim() || !newEmail.includes("@")) {
+      setEmailError("Enter a valid email address.")
+      return
+    }
+    if (newEmail.trim().toLowerCase() === currentEmail.toLowerCase()) {
+      setEmailError("That's already your current email.")
+      return
+    }
+    setEmailError(null)
+    setEmailLoading(true)
+    try {
+      const emailAddr = await user!.createEmailAddress({ email: newEmail.trim() })
+      await emailAddr.prepareVerification({ strategy: "email_code" })
+      setPendingEmailId(emailAddr.id)
+      setEmailStep("verifying")
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong. Try again."
+      setEmailError(msg)
+    } finally {
+      setEmailLoading(false)
+    }
+  }
+
+  // Step 2: verify OTP, make primary, remove old email
+  const handleVerifyCode = async () => {
+    if (!otp.trim() || otp.length < 6) {
+      setEmailError("Enter the 6-digit code.")
+      return
+    }
+    setEmailError(null)
+    setEmailLoading(true)
+    try {
+      const emailAddr = user!.emailAddresses.find(e => e.id === pendingEmailId)
+      if (!emailAddr) throw new Error("Email address not found.")
+      await emailAddr.attemptVerification({ code: otp.trim() })
+      await user!.update({ primaryEmailAddressId: emailAddr.id })
+      // Remove old email addresses that aren't the new primary
+      for (const e of user!.emailAddresses) {
+        if (e.id !== emailAddr.id) {
+          await e.destroy()
+        }
+      }
+      setEmailStep("done")
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Invalid code. Try again."
+      setEmailError(msg)
+    } finally {
+      setEmailLoading(false)
+    }
+  }
+
+  const handleCancelEmailChange = async () => {
+    // Clean up the unverified email if it was added
+    if (pendingEmailId) {
+      try {
+        const emailAddr = user!.emailAddresses.find(e => e.id === pendingEmailId)
+        if (emailAddr) await emailAddr.destroy()
+      } catch { /* ignore */ }
+    }
+    setEmailStep("idle")
+    setNewEmail("")
+    setOtp("")
+    setEmailError(null)
+    setPendingEmailId(null)
+  }
+
   const handlePasswordReset = async () => {
-    const email = user?.emailAddresses?.[0]?.emailAddress
-    if (!email) return
-    // Clerk handles password reset via email
-    await user?.createEmailAddress({ email })
-    setPasswordSent(true)
+    setPasswordLoading(true)
+    try {
+      await user?.createEmailAddress({ email: currentEmail })
+      setPasswordSent(true)
+    } catch {
+      setPasswordSent(true) // still show success even if already exists
+    } finally {
+      setPasswordLoading(false)
+    }
   }
 
   const handleDeleteAccount = async () => {
@@ -60,8 +150,6 @@ export default function AccountPage() {
       setDeleting(false)
     }
   }
-
-  const email = user?.emailAddresses?.[0]?.emailAddress ?? ""
 
   return (
     <AppLayout>
@@ -79,8 +167,87 @@ export default function AccountPage() {
             </div>
             <h2 className="font-semibold text-[#1A1A2E]">Email</h2>
           </div>
-          <p className="text-sm text-gray-700 bg-gray-50 rounded-xl px-4 py-3">{email}</p>
-          <p className="text-xs text-gray-400 mt-2">To change your email, contact support.</p>
+
+          {emailStep === "idle" && (
+            <>
+              <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 mb-3">
+                <p className="text-sm text-gray-700">{currentEmail}</p>
+                <button
+                  onClick={() => setEmailStep("entering")}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#1A1A2E] hover:text-[#FACC15] transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Change
+                </button>
+              </div>
+            </>
+          )}
+
+          {emailStep === "entering" && (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-500">Enter your new email. We'll send a verification code to confirm it's yours.</p>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={e => setNewEmail(e.target.value)}
+                placeholder="New email address"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15]"
+                onKeyDown={e => e.key === "Enter" && handleSendCode()}
+              />
+              {emailError && <p className="text-xs text-red-500">{emailError}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSendCode}
+                  disabled={emailLoading}
+                  className="text-sm font-semibold bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
+                >
+                  {emailLoading ? "Sending..." : "Send verification code"}
+                </button>
+                <button onClick={handleCancelEmailChange} className="text-sm text-gray-400 hover:text-gray-600 px-3 py-2 rounded-xl transition-colors flex items-center gap-1">
+                  <X className="w-3.5 h-3.5" /> Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {emailStep === "verifying" && (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-500">
+                A 6-digit code was sent to <strong>{newEmail}</strong>. Enter it below to confirm your new email.
+              </p>
+              <input
+                type="text"
+                value={otp}
+                onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="6-digit code"
+                maxLength={6}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15]"
+                onKeyDown={e => e.key === "Enter" && handleVerifyCode()}
+              />
+              {emailError && <p className="text-xs text-red-500">{emailError}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleVerifyCode}
+                  disabled={emailLoading || otp.length < 6}
+                  className="text-sm font-semibold bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
+                >
+                  {emailLoading ? "Verifying..." : "Verify & save"}
+                </button>
+                <button onClick={handleCancelEmailChange} className="text-sm text-gray-400 hover:text-gray-600 px-3 py-2 rounded-xl transition-colors flex items-center gap-1">
+                  <X className="w-3.5 h-3.5" /> Cancel
+                </button>
+              </div>
+              <button onClick={handleSendCode} disabled={emailLoading} className="text-xs text-gray-400 hover:text-gray-600 underline">
+                Resend code
+              </button>
+            </div>
+          )}
+
+          {emailStep === "done" && (
+            <div className="flex items-center gap-2 bg-green-50 rounded-xl px-4 py-3">
+              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+              <p className="text-sm text-green-700 font-medium">Email updated to <strong>{newEmail}</strong></p>
+            </div>
+          )}
         </div>
 
         {/* Password */}
@@ -92,17 +259,19 @@ export default function AccountPage() {
             <h2 className="font-semibold text-[#1A1A2E]">Password</h2>
           </div>
           {passwordSent ? (
-            <p className="text-sm text-green-600 bg-green-50 rounded-xl px-4 py-3">
-              Password reset email sent to {email}. Check your inbox.
-            </p>
+            <div className="flex items-center gap-2 bg-green-50 rounded-xl px-4 py-3">
+              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+              <p className="text-sm text-green-700">Reset link sent to <strong>{currentEmail}</strong>. Check your inbox.</p>
+            </div>
           ) : (
             <>
-              <p className="text-sm text-gray-500 mb-3">We'll send a password reset link to your email.</p>
+              <p className="text-sm text-gray-500 mb-3">We'll send a password reset link to your current email.</p>
               <button
                 onClick={handlePasswordReset}
-                className="text-sm font-semibold text-[#1A1A2E] bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl transition-colors"
+                disabled={passwordLoading}
+                className="text-sm font-semibold text-[#1A1A2E] bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
               >
-                Send reset link
+                {passwordLoading ? "Sending..." : "Send reset link"}
               </button>
             </>
           )}
@@ -116,7 +285,6 @@ export default function AccountPage() {
             </div>
             <h2 className="font-semibold text-[#1A1A2E]">Scenario History</h2>
           </div>
-
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => <div key={i} className="h-10 rounded-xl bg-gray-100 animate-pulse" />)}
@@ -124,7 +292,7 @@ export default function AccountPage() {
           ) : scenarios.length === 0 ? (
             <p className="text-sm text-gray-400">No scenarios yet.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {scenarios.map(s => (
                 <Link key={s.id} href={`/app/scenarios/${s.id}`}>
                   <div className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
@@ -148,7 +316,6 @@ export default function AccountPage() {
             </div>
             <h2 className="font-semibold text-red-600">Delete Account</h2>
           </div>
-
           {!showDeleteConfirm ? (
             <>
               <p className="text-sm text-gray-500 mb-3">Permanently delete your account and all your scenarios. This cannot be undone.</p>

@@ -10,6 +10,7 @@ import {
   Sparkles, Briefcase, Home, GraduationCap, Baby, Plane, Sliders, PartyPopper, X,
 } from "lucide-react";
 import { AppLayout } from "@/components/app/AppLayout";
+import { OnboardingTour, useOnboarding, markOnboardingComplete } from "@/components/app/OnboardingTour";
 import { useStore } from "@/lib/store";
 import {
   calculateMonthlyTakeHomeWith401k,
@@ -50,6 +51,8 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
   const [, navigate] = useLocation();
+  const shouldShowOnboarding = useOnboarding();
+  const [showOnboarding, setShowOnboarding] = useState(shouldShowOnboarding);
 
   // Show success banner when returning from Stripe checkout
   useEffect(() => {
@@ -144,6 +147,9 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
+      {showOnboarding && (
+        <OnboardingTour onClose={() => { markOnboardingComplete(); setShowOnboarding(false); }} />
+      )}
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Upgrade success banner */}

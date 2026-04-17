@@ -1,10 +1,11 @@
 import { useState } from "react"
-import { useUser, useClerk } from "@clerk/clerk-react"
+import { useLocation } from "wouter"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "wouter"
 import { customFetch } from "@workspace/api-client-react"
 import { AppLayout } from "@/components/app/AppLayout"
 import { useStore } from "@/lib/store"
+import { supabase, useAppUser } from "@/lib/supabase"
 import { Mail, Lock, Trash2, GitCompare, AlertTriangle, ArrowRight, CheckCircle, Pencil, X } from "lucide-react"
 
 interface Scenario {
@@ -27,21 +28,18 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
-// Email change: 3 steps — enter new email → enter OTP → done
-type EmailStep = "idle" | "entering" | "verifying" | "done"
+type EmailStep = "idle" | "entering" | "sent" | "done"
 
 export default function AccountPage() {
-  const { user } = useUser()
-  const { signOut } = useClerk()
+  const { email: currentEmail, signOut } = useAppUser()
   const { resetStore } = useStore()
+  const [, navigate] = useLocation()
 
   // Email change state
   const [emailStep, setEmailStep] = useState<EmailStep>("idle")
   const [newEmail, setNewEmail] = useState("")
-  const [otp, setOtp] = useState("")
   const [emailError, setEmailError] = useState<string | null>(null)
   const [emailLoading, setEmailLoading] = useState(false)
-  const [pendingEmailId, setPendingEmailId] = useState<string | null>(null)
 
   // Password state
   const [passwordSent, setPasswordSent] = useState(false)
@@ -57,25 +55,21 @@ export default function AccountPage() {
     queryFn: () => customFetch<Scenario[]>("/api/scenarios"),
   })
 
-  const currentEmail = user?.emailAddresses?.find(e => e.id === user.primaryEmailAddressId)?.emailAddress ?? ""
-
-  // Step 1: add new email and send OTP
-  const handleSendCode = async () => {
+  const handleSendEmailChange = async () => {
     if (!newEmail.trim() || !newEmail.includes("@")) {
       setEmailError("Enter a valid email address.")
       return
     }
-    if (newEmail.trim().toLowerCase() === currentEmail.toLowerCase()) {
+    if (newEmail.trim().toLowerCase() === currentEmail?.toLowerCase()) {
       setEmailError("That's already your current email.")
       return
     }
     setEmailError(null)
     setEmailLoading(true)
     try {
-      const emailAddr = await user!.createEmailAddress({ email: newEmail.trim() })
-      await emailAddr.prepareVerification({ strategy: "email_code" })
-      setPendingEmailId(emailAddr.id)
-      setEmailStep("verifying")
+      const { error } = await supabase.auth.updateUser({ email: newEmail.trim() })
+      if (error) throw error
+      setEmailStep("sent")
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong. Try again."
       setEmailError(msg)
@@ -84,56 +78,22 @@ export default function AccountPage() {
     }
   }
 
-  // Step 2: verify OTP, make primary, remove old email
-  const handleVerifyCode = async () => {
-    if (!otp.trim() || otp.length < 6) {
-      setEmailError("Enter the 6-digit code.")
-      return
-    }
-    setEmailError(null)
-    setEmailLoading(true)
-    try {
-      const emailAddr = user!.emailAddresses.find(e => e.id === pendingEmailId)
-      if (!emailAddr) throw new Error("Email address not found.")
-      await emailAddr.attemptVerification({ code: otp.trim() })
-      await user!.update({ primaryEmailAddressId: emailAddr.id })
-      // Remove old email addresses that aren't the new primary
-      for (const e of user!.emailAddresses) {
-        if (e.id !== emailAddr.id) {
-          await e.destroy()
-        }
-      }
-      setEmailStep("done")
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Invalid code. Try again."
-      setEmailError(msg)
-    } finally {
-      setEmailLoading(false)
-    }
-  }
-
-  const handleCancelEmailChange = async () => {
-    // Clean up the unverified email if it was added
-    if (pendingEmailId) {
-      try {
-        const emailAddr = user!.emailAddresses.find(e => e.id === pendingEmailId)
-        if (emailAddr) await emailAddr.destroy()
-      } catch { /* ignore */ }
-    }
+  const handleCancelEmailChange = () => {
     setEmailStep("idle")
     setNewEmail("")
-    setOtp("")
     setEmailError(null)
-    setPendingEmailId(null)
   }
 
   const handlePasswordReset = async () => {
+    if (!currentEmail) return
     setPasswordLoading(true)
     try {
-      await user?.createEmailAddress({ email: currentEmail })
+      await supabase.auth.resetPasswordForEmail(currentEmail, {
+        redirectTo: `${window.location.origin}/app/account`,
+      })
       setPasswordSent(true)
     } catch {
-      setPasswordSent(true) // still show success even if already exists
+      setPasswordSent(true)
     } finally {
       setPasswordLoading(false)
     }
@@ -143,9 +103,10 @@ export default function AccountPage() {
     if (deleteInput !== "DELETE") return
     setDeleting(true)
     try {
-      await user?.delete()
+      await customFetch("/api/me", { method: "DELETE" })
       resetStore()
-      signOut({ redirectUrl: "/" })
+      await signOut()
+      navigate("/")
     } catch {
       setDeleting(false)
     }
@@ -169,38 +130,36 @@ export default function AccountPage() {
           </div>
 
           {emailStep === "idle" && (
-            <>
-              <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 mb-3">
-                <p className="text-sm text-gray-700">{currentEmail}</p>
-                <button
-                  onClick={() => setEmailStep("entering")}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-[#1A1A2E] hover:text-[#FACC15] transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" /> Change
-                </button>
-              </div>
-            </>
+            <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 mb-3">
+              <p className="text-sm text-gray-700">{currentEmail}</p>
+              <button
+                onClick={() => setEmailStep("entering")}
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#1A1A2E] hover:text-[#FACC15] transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Change
+              </button>
+            </div>
           )}
 
           {emailStep === "entering" && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-500">Enter your new email. We'll send a verification code to confirm it's yours.</p>
+              <p className="text-sm text-gray-500">Enter your new email. We'll send a confirmation link to verify it.</p>
               <input
                 type="email"
                 value={newEmail}
                 onChange={e => setNewEmail(e.target.value)}
                 placeholder="New email address"
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15]"
-                onKeyDown={e => e.key === "Enter" && handleSendCode()}
+                onKeyDown={e => e.key === "Enter" && handleSendEmailChange()}
               />
               {emailError && <p className="text-xs text-red-500">{emailError}</p>}
               <div className="flex gap-2">
                 <button
-                  onClick={handleSendCode}
+                  onClick={handleSendEmailChange}
                   disabled={emailLoading}
                   className="text-sm font-semibold bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
                 >
-                  {emailLoading ? "Sending..." : "Send verification code"}
+                  {emailLoading ? "Sending..." : "Send confirmation link"}
                 </button>
                 <button onClick={handleCancelEmailChange} className="text-sm text-gray-400 hover:text-gray-600 px-3 py-2 rounded-xl transition-colors flex items-center gap-1">
                   <X className="w-3.5 h-3.5" /> Cancel
@@ -209,43 +168,17 @@ export default function AccountPage() {
             </div>
           )}
 
-          {emailStep === "verifying" && (
+          {emailStep === "sent" && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-500">
-                A 6-digit code was sent to <strong>{newEmail}</strong>. Enter it below to confirm your new email.
-              </p>
-              <input
-                type="text"
-                value={otp}
-                onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="6-digit code"
-                maxLength={6}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-[#FACC15]/30 focus:border-[#FACC15]"
-                onKeyDown={e => e.key === "Enter" && handleVerifyCode()}
-              />
-              {emailError && <p className="text-xs text-red-500">{emailError}</p>}
-              <div className="flex gap-2">
-                <button
-                  onClick={handleVerifyCode}
-                  disabled={emailLoading || otp.length < 6}
-                  className="text-sm font-semibold bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
-                >
-                  {emailLoading ? "Verifying..." : "Verify & save"}
-                </button>
-                <button onClick={handleCancelEmailChange} className="text-sm text-gray-400 hover:text-gray-600 px-3 py-2 rounded-xl transition-colors flex items-center gap-1">
-                  <X className="w-3.5 h-3.5" /> Cancel
-                </button>
+              <div className="flex items-center gap-2 bg-blue-50 rounded-xl px-4 py-3">
+                <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" />
+                <p className="text-sm text-blue-700">
+                  Confirmation link sent to <strong>{newEmail}</strong>. Click the link in that email to confirm your new address.
+                </p>
               </div>
-              <button onClick={handleSendCode} disabled={emailLoading} className="text-xs text-gray-400 hover:text-gray-600 underline">
-                Resend code
+              <button onClick={handleCancelEmailChange} className="text-xs text-gray-400 hover:text-gray-600 underline">
+                Back
               </button>
-            </div>
-          )}
-
-          {emailStep === "done" && (
-            <div className="flex items-center gap-2 bg-green-50 rounded-xl px-4 py-3">
-              <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-              <p className="text-sm text-green-700 font-medium">Email updated to <strong>{newEmail}</strong></p>
             </div>
           )}
         </div>

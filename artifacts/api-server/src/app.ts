@@ -6,7 +6,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { clerkMiddleware } from "./middleware/auth";
 import { indexHtml } from "./generated-index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,7 +46,6 @@ app.use(
     },
   }),
 );
-app.use(clerkMiddleware());
 app.use(express.json({ limit: "1mb" })); // Prevent excessively large payloads
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 

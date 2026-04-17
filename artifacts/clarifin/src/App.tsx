@@ -1,10 +1,11 @@
 import { Switch, Route, Router as WouterRouter } from "wouter"
-import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, useAuth } from "@clerk/clerk-react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "@/components/ui/toaster"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { StoreProvider } from "@/lib/store"
 import { useEffect } from "react"
+import { useLocation } from "wouter"
+import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase"
 import NotFound from "@/pages/not-found"
 import LandingPage from "@/pages/landing"
 import DashboardPage from "@/pages/dashboard"
@@ -23,33 +24,23 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
 })
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
-
-// Bridges Clerk's getToken to the customFetch auth getter in main.tsx
-function ClerkTokenBridge() {
-  const { getToken } = useAuth()
-  useEffect(() => {
-    ;(window as Window & { __clerkGetToken?: () => Promise<string | null> }).__clerkGetToken = () => getToken()
-    return () => {
-      delete (window as Window & { __clerkGetToken?: () => Promise<string | null> }).__clerkGetToken
-    }
-  }, [getToken])
-  return null
-}
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isLoaded } = useAuth()
-  if (!isLoaded) {
-    return <div className="min-h-screen bg-[#F8F9FC] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#FACC15] border-t-transparent rounded-full animate-spin" />
-    </div>
+  const { session, loading } = useSupabaseAuth()
+  const [, navigate] = useLocation()
+
+  useEffect(() => {
+    if (!loading && !session) navigate("/sign-in")
+  }, [loading, session])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FC] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#FACC15] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
-  return (
-    <>
-      <SignedIn>{children}</SignedIn>
-      <SignedOut><RedirectToSignIn /></SignedOut>
-    </>
-  )
+  if (!session) return null
+  return <>{children}</>
 }
 
 function AppRoutes() {
@@ -95,11 +86,10 @@ function AppRoutes() {
 
 function App() {
   return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY ?? "pk_test_placeholder"}>
+    <SupabaseAuthProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <StoreProvider>
-            <ClerkTokenBridge />
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
               <AppRoutes />
             </WouterRouter>
@@ -107,7 +97,7 @@ function App() {
           </StoreProvider>
         </TooltipProvider>
       </QueryClientProvider>
-    </ClerkProvider>
+    </SupabaseAuthProvider>
   )
 }
 

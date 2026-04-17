@@ -4,7 +4,7 @@ import {
   LogOut, Settings, Zap, ChevronDown, UserCircle,
 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useAppUser } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "./UserAvatar";
 import { customFetch } from "@workspace/api-client-react";
@@ -20,8 +20,7 @@ const NAV = [
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, navigate] = useLocation();
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { displayName, email, signOut } = useAppUser();
   const { profile, resetStore } = useStore();
   const [upgrading, setUpgrading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -64,9 +63,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const displayName = user?.firstName && user?.lastName
-    ? `${user.firstName} ${user.lastName}`
-    : user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Account";
   const pageLabel = NAV.find((n) => location === n.href || location.startsWith(n.href + "/"))?.label ?? "";
 
   return (
@@ -138,7 +134,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Sign out */}
         <div className="px-4 pb-4">
           <button
-            onClick={() => { resetStore(); signOut({ redirectUrl: "/" }); }}
+            onClick={() => { resetStore(); signOut().then(() => navigate("/")); }}
             className="flex items-center gap-2 px-4 py-2.5 w-full text-sm text-[#9CA3AF] hover:text-[#1A1A2E] hover:bg-gray-50 rounded-xl transition-colors"
           >
             <LogOut style={{ width: 16, height: 16 }} strokeWidth={1.8} />
@@ -188,7 +184,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   {/* User info header */}
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-semibold text-[#1A1A2E] truncate">{displayName}</p>
-                    <p className="text-xs text-gray-400 truncate">{user?.emailAddresses?.[0]?.emailAddress}</p>
+                    <p className="text-xs text-gray-400 truncate">{email}</p>
                   </div>
 
                   {/* Menu items */}
@@ -203,7 +199,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       </button>
                     </Link>
                     <button
-                      onClick={() => { resetStore(); signOut({ redirectUrl: "/" }); }}
+                      onClick={() => { resetStore(); signOut().then(() => navigate("/")); }}
                       className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
                     >
                       <LogOut className="w-4 h-4 shrink-0" />

@@ -1,13 +1,11 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useLocation } from "wouter"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { customFetch } from "@workspace/api-client-react"
 import { AppLayout } from "@/components/app/AppLayout"
-import { CheckCircle, ChevronRight, ChevronLeft, Camera, Loader2 } from "lucide-react"
+import { CheckCircle, ChevronRight, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useStore } from "@/lib/store"
-import { useUser } from "@clerk/clerk-react"
-import { UserAvatar } from "@/components/app/UserAvatar"
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
@@ -68,29 +66,6 @@ export default function ProfileSetupPage() {
   const { setProfile } = useStore()
   const [step, setStep] = useState(0)
   const [data, setData] = useState<ProfileData>(DEFAULT)
-  const { user } = useUser()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [photoUploading, setPhotoUploading] = useState(false)
-  const [photoError, setPhotoError] = useState<string | null>(null)
-
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !user) return
-    if (file.size > 10 * 1024 * 1024) { setPhotoError("Image must be under 10 MB"); return }
-    setPhotoUploading(true)
-    setPhotoError(null)
-    try {
-      await user.setProfileImage({ file })
-      setPhotoError(null)
-    } catch {
-      setPhotoError("Upload failed. Please try a different image.")
-    } finally {
-      setPhotoUploading(false)
-      // Reset so same file can be re-selected
-      e.target.value = ""
-    }
-  }
-
   // Load existing profile
   const { data: existing } = useQuery({
     queryKey: ["profile"],
@@ -171,47 +146,6 @@ export default function ProfileSetupPage() {
               ← Back to Dashboard
             </button>
           )}
-        </div>
-
-        {/* Profile photo */}
-        <div className="flex items-center gap-5 mb-8 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <div className="relative shrink-0">
-            <UserAvatar size="lg" />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={photoUploading}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#FACC15] hover:bg-yellow-300 border-2 border-white flex items-center justify-center transition-colors disabled:opacity-60"
-              title="Change photo"
-            >
-              {photoUploading
-                ? <Loader2 className="w-3.5 h-3.5 text-[#1A1A2E] animate-spin" />
-                : <Camera className="w-3.5 h-3.5 text-[#1A1A2E]" />
-              }
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className="hidden"
-              onChange={handlePhotoChange}
-            />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[#1A1A2E]">Profile photo</p>
-            <p className="text-xs text-gray-400 mt-0.5">JPG, PNG or WebP · Max 10 MB</p>
-            {photoError && <p className="text-xs text-red-500 mt-1">{photoError}</p>}
-            {!photoError && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={photoUploading}
-                className="text-xs text-[#FACC15] hover:underline mt-1 disabled:opacity-60"
-              >
-                {user?.imageUrl ? "Change photo" : "Upload photo"}
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Progress */}

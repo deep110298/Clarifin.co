@@ -6,7 +6,7 @@ export const planEnum = pgEnum("plan", ["free", "plus", "advisor"])
 
 export const usersTable = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
-  clerkId: text("clerk_id").notNull().unique(),
+  authId: text("auth_id").notNull().unique(),
   email: text("email").notNull(),
   plan: planEnum("plan").notNull().default("free"),
   stripeCustomerId: text("stripe_customer_id"),

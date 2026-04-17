@@ -1,84 +1,30 @@
 import { Router } from "express"
-import type { Request, Response } from "express"
-import { Webhook } from "svix"
+import type { Request, Response, NextFunction } from "express"
+import { createClient } from "@supabase/supabase-js"
 import { db } from "@workspace/db"
 import { usersTable } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
-import { logger } from "../lib/logger"
-import { z } from "zod"
+import { requireAuth } from "../middleware/auth"
 
 const router = Router()
 
-const clerkUserCreatedSchema = z.object({
-  id: z.string().min(1).max(255),
-  email_addresses: z.array(z.object({
-    email_address: z.string().email().max(320),
-  })).min(0),
-})
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL ?? "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+  { auth: { persistSession: false, autoRefreshToken: false } }
+)
 
-const clerkUserDeletedSchema = z.object({
-  id: z.string().min(1).max(255),
-})
-
-router.post("/webhooks/clerk", async (req: Request, res: Response) => {
-  const webhookSecret = process.env.CLERK_WEBHOOK_SECRET
-  if (!webhookSecret) {
-    res.status(500).json({ error: "Webhook secret not configured" })
-    return
-  }
-
-  const svix_id = req.headers["svix-id"] as string
-  const svix_timestamp = req.headers["svix-timestamp"] as string
-  const svix_signature = req.headers["svix-signature"] as string
-
-  if (!svix_id || !svix_timestamp || !svix_signature) {
-    res.status(400).json({ error: "Missing svix headers" })
-    return
-  }
-
-  let payload: { type: string; data: Record<string, unknown> }
+// DELETE /api/me — delete account from Supabase Auth + all DB data
+router.delete("/me", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const wh = new Webhook(webhookSecret)
-    payload = wh.verify(JSON.stringify(req.body), {
-      "svix-id": svix_id,
-      "svix-timestamp": svix_timestamp,
-      "svix-signature": svix_signature,
-    }) as typeof payload
-  } catch (err) {
-    logger.error({ err }, "Invalid Clerk webhook signature")
-    res.status(400).json({ error: "Invalid signature" })
-    return
-  }
-
-  const { type, data } = payload
-
-  try {
-    if (type === "user.created" || type === "user.updated") {
-      const parsed = clerkUserCreatedSchema.safeParse(data)
-      if (!parsed.success) {
-        logger.warn({ type, errors: parsed.error.flatten() }, "Invalid Clerk webhook payload")
-        res.status(400).json({ error: "Invalid payload" })
-        return
-      }
-      const { id: clerkId, email_addresses } = parsed.data
-      const email = email_addresses[0]?.email_address ?? ""
-      await db.insert(usersTable)
-        .values({ clerkId, email, plan: "free" })
-        .onConflictDoUpdate({ target: usersTable.clerkId, set: { email, updatedAt: new Date() } })
+    // Find the user's auth_id
+    const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.clarifin!.userId))
+    if (dbUser) {
+      await supabaseAdmin.auth.admin.deleteUser(dbUser.authId)
     }
-    if (type === "user.deleted") {
-      const parsed = clerkUserDeletedSchema.safeParse(data)
-      if (!parsed.success) {
-        logger.warn({ type, errors: parsed.error.flatten() }, "Invalid Clerk webhook payload")
-        res.status(400).json({ error: "Invalid payload" })
-        return
-      }
-      await db.delete(usersTable).where(eq(usersTable.clerkId, parsed.data.id))
-    }
-    res.json({ received: true })
+    res.status(204).send()
   } catch (err) {
-    logger.error({ err }, "Error processing Clerk webhook")
-    res.status(500).json({ error: "Internal error" })
+    next(err)
   }
 })
 

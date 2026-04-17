@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react"
+import { useAppUser } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
 
 interface UserAvatarProps {
@@ -13,17 +13,14 @@ const SIZE = {
 }
 
 export function UserAvatar({ size = "md", className }: UserAvatarProps) {
-  const { user } = useUser()
-  const initials =
-    user?.firstName?.[0] ??
-    user?.emailAddresses?.[0]?.emailAddress?.[0]?.toUpperCase() ??
-    "U"
+  const { firstName, email, imageUrl } = useAppUser()
+  const initial = firstName?.[0]?.toUpperCase() ?? email?.[0]?.toUpperCase() ?? "U"
 
-  if (user?.imageUrl) {
+  if (imageUrl) {
     return (
       <img
-        src={user.imageUrl}
-        alt={user.firstName ?? "Profile"}
+        src={imageUrl}
+        alt={firstName ?? "Profile"}
         className={cn("rounded-full object-cover shrink-0", SIZE[size], className)}
       />
     )
@@ -35,7 +32,7 @@ export function UserAvatar({ size = "md", className }: UserAvatarProps) {
       SIZE[size],
       className
     )}>
-      {initials}
+      {initial}
     </div>
   )
 }

@@ -201,7 +201,10 @@ const LS_INTAKE = "clarifin_intake";
 export function loadScenarios(): AtriumScenario[] {
   try {
     const raw = localStorage.getItem(LS_SCENARIOS);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
   } catch {}
   return [{ ...DEFAULT_SCENARIO }, { ...SECOND_SCENARIO }];
 }

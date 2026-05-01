@@ -7,6 +7,7 @@ import {
   loadScenarios, saveScenarios,
   loadJournal, saveJournal,
   loadIntake,
+  DEFAULT_SCENARIO, SECOND_SCENARIO,
   type AtriumScenario, type AtriumEvent, type JournalEntry, type Intake,
 } from "@/lib/atrium-engine"
 
@@ -994,8 +995,14 @@ export default function ProductPage() {
   const { session } = useSupabaseAuth()
   const [, navigate] = useLocation()
 
-  const [scenarios, setScenarios_] = useState<AtriumScenario[]>(() => loadScenarios())
-  const [activeId, setActiveId] = useState(() => loadScenarios()[0]?.id ?? "s-baseline")
+  const [scenarios, setScenarios_] = useState<AtriumScenario[]>(() => {
+    const s = loadScenarios()
+    return s.length > 0 ? s : [{ ...DEFAULT_SCENARIO }, { ...SECOND_SCENARIO }]
+  })
+  const [activeId, setActiveId] = useState(() => {
+    const s = loadScenarios()
+    return (s.length > 0 ? s[0] : DEFAULT_SCENARIO).id
+  })
   const [journal, setJournal_] = useState<JournalEntry[]>(() => loadJournal())
   const [intake, setIntake] = useState<Intake>(() => loadIntake())
   const [tab, setTab] = useState("overview")
@@ -1007,11 +1014,10 @@ export default function ProductPage() {
   const setScenarios = (s: AtriumScenario[]) => { setScenarios_(s); saveScenarios(s) }
   const setJournal = (j: JournalEntry[]) => { setJournal_(j); saveJournal(j) }
 
-  const curS = scenarios.find((s) => s.id === activeId) ?? scenarios[0]
-  const result = curS ? simulateAtrium(curS) : null
+  const curS = scenarios.find((s) => s.id === activeId) ?? scenarios[0] ?? { ...DEFAULT_SCENARIO }
+  const result = simulateAtrium(curS)
 
   const setScenario = (patch: Partial<AtriumScenario>) => {
-    if (!curS) return
     setScenarios(scenarios.map((s) => s.id === curS.id ? { ...s, ...patch } : s))
   }
 
@@ -1032,14 +1038,6 @@ export default function ProductPage() {
     { id: "journal", label: "JOURNAL" },
     { id: "share", label: "SHARE" },
   ]
-
-  if (!curS || !result) {
-    return (
-      <div style={{ minHeight: "100vh", background: T.paper, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute }}>LOADING…</div>
-      </div>
-    )
-  }
 
   return (
     <div style={{ minHeight: "100vh", background: T.paper, color: T.ink, fontFamily: FONT_BODY, display: "flex", flexDirection: "column" }}>

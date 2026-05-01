@@ -8,16 +8,9 @@ import { useLocation } from "wouter"
 import { SupabaseAuthProvider, useSupabaseAuth } from "@/lib/supabase"
 import NotFound from "@/pages/not-found"
 import LandingPage from "@/pages/landing"
-import DashboardPage from "@/pages/dashboard"
-import ScenarioBuilderPage from "@/pages/scenario-builder"
-import ScenarioDetailPage from "@/pages/scenario-detail"
-import ScenarioComparePage from "@/pages/scenario-compare"
-import ScenariosListPage from "@/pages/scenarios-list"
-import AdvisorPage from "@/pages/advisor"
-import ProfileSetupPage from "@/pages/profile-setup"
 import SignInPage from "@/pages/sign-in"
-import SignUpPage from "@/pages/sign-up"
-import SharedScenarioPage from "@/pages/shared-scenario"
+import OnboardingPage from "@/pages/onboarding"
+import ProductPage from "@/pages/product"
 import AccountPage from "@/pages/account"
 
 const queryClient = new QueryClient({
@@ -34,8 +27,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FC] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#FACC15] border-t-transparent rounded-full animate-spin" />
+      <div style={{ minHeight: "100vh", background: "#eeeeec", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.22em", color: "rgba(10,10,9,0.55)" }}>
+          ONE MOMENT…
+        </div>
       </div>
     )
   }
@@ -46,37 +41,23 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Switch>
+      {/* Public routes */}
       <Route path="/" component={LandingPage} />
       <Route path="/sign-in" component={SignInPage} />
-      <Route path="/sign-up" component={SignUpPage} />
-      <Route path="/shared/:token" component={SharedScenarioPage} />
+      <Route path="/sign-up" component={SignInPage} />
 
-      <Route path="/app/dashboard">
-        <ProtectedRoute><DashboardPage /></ProtectedRoute>
-      </Route>
-      <Route path="/app/profile">
-        <ProtectedRoute><ProfileSetupPage /></ProtectedRoute>
+      {/* Protected routes */}
+      <Route path="/app/onboarding">
+        <ProtectedRoute><OnboardingPage /></ProtectedRoute>
       </Route>
       <Route path="/app/account">
         <ProtectedRoute><AccountPage /></ProtectedRoute>
       </Route>
-      <Route path="/app/scenarios/new">
-        <ProtectedRoute><ScenarioBuilderPage /></ProtectedRoute>
-      </Route>
-      <Route path="/app/scenarios/compare">
-        <ProtectedRoute><ScenarioComparePage /></ProtectedRoute>
-      </Route>
-      <Route path="/app/scenarios/:id">
-        <ProtectedRoute><ScenarioDetailPage /></ProtectedRoute>
-      </Route>
-      <Route path="/app/scenarios">
-        <ProtectedRoute><ScenariosListPage /></ProtectedRoute>
-      </Route>
-      <Route path="/app/advisor">
-        <ProtectedRoute><AdvisorPage /></ProtectedRoute>
-      </Route>
       <Route path="/app">
-        <ProtectedRoute><DashboardPage /></ProtectedRoute>
+        <ProtectedRoute><ProductPage /></ProtectedRoute>
+      </Route>
+      <Route path="/app/*">
+        <ProtectedRoute><ProductPage /></ProtectedRoute>
       </Route>
 
       <Route component={NotFound} />

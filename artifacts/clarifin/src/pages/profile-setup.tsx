@@ -127,6 +127,20 @@ export default function ProfileSetupPage() {
 
   return (
     <AppLayout>
+      <style>{`
+        /* Editorial restyle for profile setup */
+        .max-w-2xl .bg-white { background: #f4f4f1 !important; border-radius: 0 !important; border-color: rgba(10,10,9,0.12) !important; box-shadow: none !important; }
+        .max-w-2xl .rounded-2xl, .max-w-2xl .rounded-xl { border-radius: 0 !important; }
+        .max-w-2xl .bg-\\[\\#FACC15\\] { background: #0a0a09 !important; color: #eeeeec !important; }
+        .max-w-2xl .text-\\[\\#FACC15\\] { color: #0a0a09 !important; }
+        .max-w-2xl .bg-\\[\\#FFF9E6\\] { background: #dfdfdb !important; }
+        .max-w-2xl .text-\\[\\#1A1A2E\\] { color: #0a0a09 !important; }
+        .max-w-2xl .border-\\[\\#FACC15\\] { border-color: #0a0a09 !important; }
+        .max-w-2xl .shadow-sm { box-shadow: none !important; }
+        .max-w-2xl .focus\\:ring-\\[\\#FACC15\\]\\/30:focus { --tw-ring-color: rgba(10,10,9,0.1) !important; }
+        .max-w-2xl .focus\\:border-\\[\\#FACC15\\]:focus { border-color: #0a0a09 !important; }
+        .max-w-2xl h1.text-2xl { font-family: "Cormorant Garamond", Georgia, serif !important; font-weight: 400 !important; }
+      `}</style>
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-start justify-between">

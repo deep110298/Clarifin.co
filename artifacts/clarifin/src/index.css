@@ -2,6 +2,32 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+/* ── Clarifin mono theme tokens ─────────────────────────────── */
+:root {
+  --cl-paper: #eeeeec;
+  --cl-cream: #dfdfdb;
+  --cl-panel: #f4f4f1;
+  --cl-ink: #0a0a09;
+  --cl-ink2: #33332f;
+  --cl-line: rgba(10,10,9,0.12);
+  --cl-line2: rgba(10,10,9,0.26);
+  --cl-accent: #0a0a09;
+  --cl-mute: rgba(10,10,9,0.55);
+  --cl-claret: #5a3a3a;
+  --cl-font-display: "Cormorant Garamond", Georgia, serif;
+  --cl-font-body: "Geist", "Inter", system-ui, sans-serif;
+  --cl-font-mono: "JetBrains Mono", monospace;
+}
+
+@keyframes cl-fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cl-reveal {
+  animation: cl-fadeIn 550ms cubic-bezier(.2,.7,.2,1) both;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

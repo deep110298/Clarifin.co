@@ -3,11 +3,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Link } from "wouter"
 import { customFetch } from "@workspace/api-client-react"
 import { AppLayout } from "@/components/app/AppLayout"
-import {
-  Plus, GitCompare, ArrowRight, Briefcase, Home, GraduationCap,
-  Baby, Plane, Sliders, Trash2, AlertCircle, Zap, Sparkles,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Plus, Briefcase, Home, GraduationCap, Baby, Plane, Sliders, Trash2, Sparkles } from "lucide-react"
+
+const T = {
+  paper: "#eeeeec",
+  cream: "#dfdfdb",
+  panel: "#f4f4f1",
+  ink: "#0a0a09",
+  ink2: "#33332f",
+  line: "rgba(10,10,9,0.12)",
+  line2: "rgba(10,10,9,0.26)",
+  accent: "#0a0a09",
+  mute: "rgba(10,10,9,0.55)",
+};
+
+const MONO = "JetBrains Mono, monospace";
+const SERIF = "Cormorant Garamond, Georgia, serif";
+const BODY = "Geist, Inter, system-ui, sans-serif";
 
 interface Scenario {
   id: string
@@ -21,13 +33,13 @@ interface Me {
   profileComplete: boolean
 }
 
-const TYPE_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  "job-change": { label: "Job Change", icon: Briefcase, color: "bg-blue-100 text-blue-700" },
-  "buy-home": { label: "Buy a Home", icon: Home, color: "bg-purple-100 text-purple-700" },
-  "school": { label: "Back to School", icon: GraduationCap, color: "bg-orange-100 text-orange-700" },
-  "child": { label: "New Child", icon: Baby, color: "bg-pink-100 text-pink-700" },
-  "time-off": { label: "Time Off", icon: Plane, color: "bg-cyan-100 text-cyan-700" },
-  "custom": { label: "Custom", icon: Sliders, color: "bg-gray-100 text-gray-700" },
+const TYPE_META: Record<string, { label: string; icon: React.ElementType }> = {
+  "job-change": { label: "JOB CHANGE", icon: Briefcase },
+  "buy-home": { label: "BUY HOME", icon: Home },
+  "school": { label: "EDUCATION", icon: GraduationCap },
+  "child": { label: "NEW CHILD", icon: Baby },
+  "time-off": { label: "TIME OFF", icon: Plane },
+  "custom": { label: "CUSTOM", icon: Sliders },
 }
 
 function formatDate(iso: string) {
@@ -70,114 +82,178 @@ export default function ScenariosListPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div style={{ maxWidth: 960, margin: "0 auto", fontFamily: BODY }}>
+
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 36 }}>
           <div>
-            <h1 className="text-2xl font-bold text-[#1A1A2E]">Your Scenarios</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Model any life decision and compare paths side by side.</p>
+            <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.18em", color: T.mute, marginBottom: 8 }}>
+              YOUR SCENARIOS
+            </div>
+            <div style={{ fontFamily: SERIF, fontSize: 48, lineHeight: 1, letterSpacing: -1, color: T.ink }}>
+              Your Scenarios.
+            </div>
+            <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 18, color: T.ink2, marginTop: 8 }}>
+              Model any life decision and compare paths.
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {scenarios.length >= 2 && (
-              <Link href="/app/scenarios/compare">
-                <button className="flex items-center gap-2 border border-gray-200 hover:border-[#FACC15] text-gray-600 hover:text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-medium transition-colors bg-white">
-                  <GitCompare className="w-4 h-4" /> Compare
-                </button>
-              </Link>
-            )}
-            <Link href="/app/scenarios/new">
-              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-4 py-2 rounded-2xl text-sm font-bold transition-colors">
-                <Plus className="w-4 h-4" /> New scenario
-              </button>
-            </Link>
-          </div>
+          <Link href="/app/scenarios/new">
+            <button style={{
+              background: T.ink, color: T.paper, border: "none",
+              padding: "12px 22px", fontFamily: MONO, fontSize: 11,
+              letterSpacing: "0.16em", cursor: "pointer", borderRadius: 0, marginTop: 8,
+            }}>
+              NEW SCENARIO →
+            </button>
+          </Link>
         </div>
 
-        {/* Free plan banner — shown when they have scenarios they can't fully view */}
+        {/* Upgrade banner */}
         {isFree && scenarios.length > 1 && (
-          <><div className="flex items-start gap-3 bg-[#1A1A2E] rounded-2xl p-4">
-            <Sparkles className="w-5 h-5 text-[#FACC15] shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">Unlock full analysis with Plus</p>
-              <p className="text-xs text-white/60 mt-0.5">You can build unlimited scenarios free. Upgrade to $7/mo to view the full breakdown, charts, and retirement projections on all of them.</p>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 14,
+            background: T.ink, color: T.paper, padding: "16px 20px",
+            marginBottom: 28, border: `1px solid ${T.line}`,
+          }}>
+            <Sparkles style={{ width: 18, height: 18, color: T.mute, flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", marginBottom: 4 }}>UNLOCK FULL ANALYSIS</div>
+              <div style={{ fontSize: 13, color: "rgba(238,238,236,0.65)" }}>
+                Upgrade to view complete breakdowns, charts, and retirement projections on all scenarios.
+              </div>
             </div>
             <button
               onClick={handleUpgrade}
               disabled={checkoutLoading}
-              className="shrink-0 text-xs bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-3 py-1.5 rounded-xl font-bold transition-colors disabled:opacity-60"
-            >
-              {checkoutLoading ? "Loading..." : "Upgrade — $7/mo"}
-            </button>
+              style={{
+                background: T.paper, color: T.ink, border: "none",
+                padding: "10px 18px", fontFamily: MONO, fontSize: 11,
+                letterSpacing: "0.14em", cursor: checkoutLoading ? "wait" : "pointer",
+                flexShrink: 0, borderRadius: 0,
+              }}
+            >{checkoutLoading ? "LOADING…" : "UPGRADE →"}</button>
           </div>
-          {checkoutError && <p className="text-xs text-red-500 mt-2 px-1">{checkoutError}</p>}
-          </>
+        )}
+        {checkoutError && (
+          <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 13, color: "#b15050", marginBottom: 12 }}>
+            {checkoutError}
+          </div>
         )}
 
         {/* Loading */}
         {isLoading && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 h-36 animate-pulse" />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1 }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ background: T.panel, height: 180, opacity: 0.5 }} />
             ))}
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && scenarios.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-              <GitCompare className="w-8 h-8 text-gray-300" />
+          <div style={{ textAlign: "center", padding: "80px 0" }}>
+            <div style={{ fontFamily: SERIF, fontSize: 26, fontStyle: "italic", color: T.ink2, marginBottom: 12 }}>
+              No scenarios yet.
             </div>
-            <h3 className="font-semibold text-[#1A1A2E] mb-2">No scenarios yet</h3>
-            <p className="text-sm text-gray-400 max-w-xs mb-6">
-              Create your first scenario to see how a life decision affects your finances over 30 years.
-            </p>
+            <div style={{ fontFamily: BODY, fontSize: 14, color: T.mute, marginBottom: 28, maxWidth: 340, margin: "0 auto 28px" }}>
+              Create your first scenario to see how a life decision affects your finances.
+            </div>
             <Link href="/app/scenarios/new">
-              <button className="flex items-center gap-2 bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] px-5 py-2.5 rounded-2xl font-bold text-sm transition-colors">
-                <Plus className="w-4 h-4" /> Create first scenario
-              </button>
+              <button style={{
+                background: T.ink, color: T.paper, border: "none",
+                padding: "13px 26px", fontFamily: MONO, fontSize: 11,
+                letterSpacing: "0.16em", cursor: "pointer", borderRadius: 0,
+              }}>+ CREATE FIRST SCENARIO</button>
             </Link>
           </div>
         )}
 
         {/* Scenario grid */}
         {!isLoading && scenarios.length > 0 && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {scenarios.map(s => {
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1 }}>
+            {scenarios.map((s: Scenario, i: number) => {
               const meta = TYPE_META[s.type] ?? TYPE_META.custom
               const Icon = meta.icon
               return (
-                <div key={s.id} className="group bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:border-[#FACC15]/30 hover:shadow-md transition-all flex flex-col">
-                  <div className="flex items-start justify-between mb-3">
-                    <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full", meta.color)}>
-                      <Icon className="w-3.5 h-3.5" />
-                      {meta.label}
-                    </span>
-                    <button
-                      onClick={() => { if (confirm("Delete this scenario?")) deleteMutation.mutate(s.id) }}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                <div
+                  key={s.id}
+                  className="scenario-card"
+                  style={{
+                    background: T.panel, border: `1px solid ${T.line}`,
+                    padding: "22px 24px", display: "flex", flexDirection: "column",
+                    cursor: "pointer", transition: "background 0.2s",
+                    position: "relative",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = T.cream; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = T.panel; }}
+                >
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm("Delete this scenario?")) deleteMutation.mutate(s.id)
+                    }}
+                    style={{
+                      position: "absolute", top: 14, right: 14,
+                      background: "none", border: "none", cursor: "pointer",
+                      color: T.mute, opacity: 0, padding: 4,
+                      transition: "opacity 0.2s",
+                    }}
+                    className="delete-btn"
+                  >
+                    <Trash2 style={{ width: 14, height: 14 }} />
+                  </button>
+
+                  {/* Tag */}
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    fontFamily: MONO, fontSize: 9, letterSpacing: "0.16em", color: T.mute,
+                    marginBottom: 14,
+                  }}>
+                    <Icon style={{ width: 11, height: 11 }} strokeWidth={1.5} />
+                    {meta.label}
                   </div>
-                  <h3 className="font-semibold text-[#1A1A2E] mb-1 line-clamp-2">{s.name}</h3>
-                  <p className="text-xs text-gray-400 mb-4">{formatDate(s.createdAt)}</p>
-                  <div className="mt-auto">
+
+                  {/* Name */}
+                  <div style={{
+                    fontFamily: SERIF, fontSize: 22, fontStyle: "italic",
+                    lineHeight: 1.3, color: T.ink, flex: 1, marginBottom: 16,
+                  }}>
+                    {s.name}
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.14em", color: T.mute }}>
+                      {formatDate(s.createdAt)}
+                    </span>
                     <Link href={`/app/scenarios/${s.id}`}>
-                      <button className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-[#FACC15] hover:text-[#FACC15] text-gray-600 py-2 rounded-xl text-sm font-medium transition-colors">
-                        View analysis <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+                      <span style={{
+                        fontFamily: MONO, fontSize: 10, letterSpacing: "0.14em",
+                        color: T.ink, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer",
+                      }}>VIEW ANALYSIS →</span>
                     </Link>
                   </div>
                 </div>
               )
             })}
 
-            {/* Add new card */}
+            {/* Add new */}
             <Link href="/app/scenarios/new">
-              <div className="flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#FACC15]/40 hover:bg-[#FACC15]/5 p-5 h-full min-h-36 cursor-pointer transition-all group">
-                <Plus className="w-8 h-8 text-gray-300 group-hover:text-[#FACC15] transition-colors" />
-                <span className="text-sm text-gray-400 group-hover:text-[#FACC15] font-medium transition-colors">New scenario</span>
+              <div
+                style={{
+                  border: `1px dashed ${T.line2}`, display: "flex",
+                  alignItems: "center", justifyContent: "center", gap: 10,
+                  minHeight: 180, cursor: "pointer",
+                  transition: "background 0.2s, border-color 0.2s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = T.cream; (e.currentTarget as HTMLElement).style.borderColor = T.ink; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.borderColor = T.line2; }}
+              >
+                <Plus style={{ width: 16, height: 16, color: T.mute }} />
+                <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.16em", color: T.mute }}>
+                  NEW SCENARIO
+                </span>
               </div>
             </Link>
           </div>
@@ -185,24 +261,33 @@ export default function ScenariosListPage() {
 
         {/* Advisor nudge */}
         {scenarios.length > 0 && (
-          <div className="bg-[#1A1A2E] rounded-2xl p-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#FACC15]/20 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-[#FACC15]" />
-              </div>
+          <div style={{ marginTop: 28, background: T.ink, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <Sparkles style={{ width: 18, height: 18, color: T.mute, flexShrink: 0 }} />
               <div>
-                <p className="text-sm font-semibold text-white">Want a second opinion?</p>
-                <p className="text-xs text-white/50">Ask the AI advisor to compare your scenarios or dig into the numbers.</p>
+                <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.16em", color: "rgba(238,238,236,0.6)", marginBottom: 4 }}>
+                  ASK CLARIFIN
+                </div>
+                <div style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 16, color: T.paper }}>
+                  Want a second opinion on any scenario?
+                </div>
               </div>
             </div>
             <Link href="/app/advisor">
-              <button className="shrink-0 text-sm bg-[#FACC15] hover:bg-yellow-300 text-white px-4 py-2 rounded-xl font-medium transition-colors">
-                Ask AI
-              </button>
+              <button style={{
+                background: T.paper, color: T.ink, border: "none",
+                padding: "10px 18px", fontFamily: MONO, fontSize: 11,
+                letterSpacing: "0.14em", cursor: "pointer", borderRadius: 0,
+              }}>ASK AI →</button>
             </Link>
           </div>
         )}
+
       </div>
+
+      <style>{`
+        .scenario-card:hover .delete-btn { opacity: 1 !important; }
+      `}</style>
     </AppLayout>
   )
 }

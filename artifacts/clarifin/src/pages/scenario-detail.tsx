@@ -78,6 +78,7 @@ export default function ScenarioDetailPage() {
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState("")
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [shareLink, setShareLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const shareLinkRef = useRef<HTMLInputElement>(null)
@@ -386,6 +387,23 @@ export default function ScenarioDetailPage() {
           body { background: white !important; }
           .shadow-sm { box-shadow: none !important; }
         }
+        /* Editorial restyle overrides */
+        .max-w-5xl { font-family: Geist, Inter, system-ui, sans-serif; }
+        .max-w-5xl .bg-white { background: #f4f4f1 !important; border-radius: 0 !important; border-color: rgba(10,10,9,0.12) !important; box-shadow: none !important; }
+        .max-w-5xl .rounded-2xl, .max-w-5xl .rounded-xl { border-radius: 0 !important; }
+        .max-w-5xl .bg-\\[\\#1A1A2E\\] { background: #0a0a09 !important; }
+        .max-w-5xl .bg-\\[\\#FACC15\\] { background: #0a0a09 !important; color: #eeeeec !important; }
+        .max-w-5xl .text-\\[\\#FACC15\\] { color: #0a0a09 !important; }
+        .max-w-5xl .text-\\[\\#1A1A2E\\] { color: #0a0a09 !important; }
+        .max-w-5xl .border-yellow-200 { border-color: rgba(10,10,9,0.12) !important; }
+        .max-w-5xl .shadow-sm, .max-w-5xl .shadow-md { box-shadow: none !important; }
+        .max-w-5xl h1, .max-w-5xl h2, .max-w-5xl h3 { font-family: "Cormorant Garamond", Georgia, serif !important; }
+        .max-w-5xl .text-2xl.font-bold { font-family: "Cormorant Garamond", Georgia, serif !important; font-size: 32px !important; font-weight: 400 !important; }
+        .max-w-5xl .bg-\\[\\#FFF9E6\\] { background: #dfdfdb !important; }
+        .max-w-5xl .bg-orange-50 { background: #f4f4f1 !important; border-color: rgba(10,10,9,0.26) !important; }
+        .max-w-5xl input[type=range]::-webkit-slider-runnable-track { border-radius: 0 !important; }
+        .max-w-5xl button.bg-\\[\\#FACC15\\] { background: #0a0a09 !important; color: #eeeeec !important; border-radius: 0 !important; font-family: "JetBrains Mono", monospace !important; letter-spacing: 0.14em !important; }
+        .max-w-5xl input.border-b-2.border-\\[\\#FACC15\\] { border-color: #0a0a09 !important; }
       `}</style>
       <div className="max-w-5xl mx-auto space-y-5">
         {/* Header */}
@@ -436,7 +454,7 @@ export default function ScenarioDetailPage() {
               <Share2 className="w-4 h-4" /> Share
             </button>
             <button
-              onClick={() => { if (confirm("Delete this scenario?")) deleteMutation.mutate() }}
+              onClick={() => setShowDeleteModal(true)}
               className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-xl transition-colors"
             >
               <Trash2 className="w-4 h-4" /> Delete
@@ -503,6 +521,36 @@ export default function ScenarioDetailPage() {
               {shareMutation.isError && (
                 <p className="text-sm text-red-500">Failed to generate link. Please try again.</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Delete confirmation modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDeleteModal(false)}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+              <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-red-500" />
+              </div>
+              <h2 className="text-lg font-bold text-[#1A1A2E] text-center mb-1">Delete scenario?</h2>
+              <p className="text-sm text-gray-500 text-center mb-6">
+                "<span className="font-medium text-[#1A1A2E]">{scenario?.name}</span>" will be permanently deleted. This can't be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { setShowDeleteModal(false); deleteMutation.mutate() }}
+                  disabled={deleteMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-60"
+                >
+                  {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                </button>
+              </div>
             </div>
           </div>
         )}

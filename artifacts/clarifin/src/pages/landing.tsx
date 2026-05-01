@@ -1,411 +1,431 @@
-import { ArrowRight, TrendingUp, Home, PiggyBank, BarChart3, Zap, Shield, Target, Compass } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import logoImg from "@/assets/logo.png";
+import { useEffect, useRef } from "react";
 
-// Mini dashboard mockup shown in hero
-function DashboardMockup() {
+// ── Brand mark ───────────────────────────────────────────────
+function BrandMark({ size = 30 }: { size?: number }) {
   return (
-    <div className="w-full bg-[#F8F9FC] rounded-2xl overflow-hidden shadow-2xl border border-gray-200">
-      {/* Topbar */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-        <div>
-          <p className="text-[10px] text-gray-400 font-medium">Welcome Back!</p>
-          <p className="text-xs font-bold text-[#1A1A2E]">Alex Johnson</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-[#FACC15] text-[#1A1A2E] text-[10px] font-bold px-2.5 py-1 rounded-lg">+ Add new</div>
-          <div className="w-6 h-6 rounded-full bg-[#FACC15] flex items-center justify-center text-[#1A1A2E] text-[9px] font-bold">AJ</div>
-        </div>
-      </div>
-
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="hidden sm:flex flex-col w-32 bg-white border-r border-gray-100 py-3 px-2 gap-1">
-          {[
-            { label: "Dashboard", active: true },
-            { label: "Scenarios", active: false },
-            { label: "AI Advisor", active: false },
-            { label: "My Profile", active: false },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className={`px-2 py-1.5 rounded-lg text-[9px] font-medium ${
-                item.active ? "bg-[#FACC15] text-[#1A1A2E]" : "text-gray-400"
-              }`}
-            >
-              {item.label}
-            </div>
-          ))}
-        </div>
-
-        {/* Main content */}
-        <div className="flex-1 p-3 space-y-3">
-          {/* Quick stat cards */}
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: "Net Worth", value: "$284,500", color: "bg-[#FFF9E6]", accent: "#FACC15" },
-              { label: "Savings Rate", value: "34%", color: "bg-[#EFF6FF]", accent: "#3B82F6" },
-              { label: "Monthly Delta", value: "+$2,840", color: "bg-[#F0FDF4]", accent: "#22C55E" },
-              { label: "Fire Number", value: "$1.2M", color: "bg-[#FFF1F2]", accent: "#F43F5E" },
-            ].map((card) => (
-              <div key={card.label} className={`${card.color} rounded-xl p-2`}>
-                <p className="text-[8px] text-gray-500 font-medium">{card.label}</p>
-                <p className="text-sm font-bold text-[#1A1A2E] mt-0.5">{card.value}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Chart area */}
-          <div className="bg-white rounded-xl p-3 border border-gray-100">
-            <p className="text-[9px] font-semibold text-[#1A1A2E] mb-2">Wealth Projection</p>
-            <div className="h-16 flex items-end gap-0.5">
-              {[20, 28, 24, 35, 40, 38, 50, 55, 60, 58, 70, 80].map((h, i) => (
-                <div key={i} className="flex-1 flex flex-col justify-end">
-                  <div
-                    className="rounded-t-sm"
-                    style={{
-                      height: `${h}%`,
-                      background: i === 11 ? "#FACC15" : `rgba(250, 204, 21, ${0.2 + i * 0.05})`,
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+    <div style={{
+      width: size, height: size, borderRadius: "50%",
+      border: "1.5px solid #0a0a09",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      flexShrink: 0,
+    }}>
+      <div style={{ width: size * 0.3, height: size * 0.3, background: "#0a0a09", borderRadius: "50%" }} />
     </div>
   );
 }
 
-// Use case illustration cards
-function UseCaseCard({ icon, color, bg, title, subtitle }: {
-  icon: React.ReactNode; color: string; bg: string; title: string; subtitle: string;
-}) {
+// ── Hero SVG timeline ────────────────────────────────────────
+function HeroTimeline() {
+  const events = [
+    { a: 34, t: "today", c: "#0a0a09" },
+    { a: 41, t: "a quiet year", c: "#7a7a72" },
+    { a: 48, t: "eldest at uni", c: "#5a5a55" },
+    { a: 58, t: "retire", c: "#0a0a09" },
+    { a: 72, t: "care", c: "#33332f" },
+    { a: 92, t: "legacy", c: "#7a7a72" },
+  ];
+  const W = 520, H = 220, pad = 18, yBase = H - 50;
+  const xMin = 30, xMax = 95;
+  const x = (a: number) => pad + ((a - xMin) / (xMax - xMin)) * (W - pad * 2);
+
+  const nwCurve: { a: number; y: number }[] = [];
+  for (let a = xMin; a <= xMax; a += 1) {
+    const t = (a - xMin) / (xMax - xMin);
+    const v = Math.max(0, 4 * 0.62 * t * (1 - t * 0.85)) - (a > 70 ? (a - 70) * 0.014 : 0);
+    nwCurve.push({ a, y: yBase - v * (yBase - 36) });
+  }
+  const curve = nwCurve.map((p, i) => (i === 0 ? "M" : "L") + x(p.a).toFixed(1) + "," + p.y.toFixed(1)).join(" ");
+  const fill = curve + ` L ${x(xMax).toFixed(1)},${yBase} L ${x(xMin).toFixed(1)},${yBase} Z`;
+
   return (
-    <div className={`${bg} rounded-2xl p-6 aspect-[4/3] flex flex-col justify-between`}>
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center`} style={{ background: color }}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-lg font-bold text-[#1A1A2E] leading-tight">{title}</p>
-        <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
-      </div>
-      {/* Mini chart decoration */}
-      <div className="flex items-end gap-1 h-8">
-        {[40, 55, 45, 65, 70, 80, 90].map((h, i) => (
-          <div
-            key={i}
-            className="flex-1 rounded-t-sm"
-            style={{ height: `${h}%`, background: color, opacity: 0.3 + i * 0.1 }}
-          />
-        ))}
-      </div>
-    </div>
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block", maxWidth: 520, margin: "0 auto" }}>
+      <path d={fill} fill="#0a0a09" opacity="0.08" />
+      <path d={curve} stroke="#0a0a09" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+      <line x1={pad} x2={W - pad} y1={yBase} y2={yBase} stroke="#33332f" strokeWidth="0.8" />
+      {[30, 40, 50, 60, 70, 80, 90].map((a) => (
+        <g key={a}>
+          <line x1={x(a)} x2={x(a)} y1={yBase} y2={yBase + 5} stroke="#33332f" strokeWidth="0.5" />
+          <text x={x(a)} y={yBase + 17} fontSize="9" fill="rgba(10,10,9,0.55)" textAnchor="middle"
+            fontFamily="JetBrains Mono, monospace" letterSpacing="0.08em">{a}</text>
+        </g>
+      ))}
+      {events.map((e, i) => {
+        const above = i % 2 === 0;
+        const yL = above ? 26 : yBase + 38;
+        const cy = nwCurve.find((p) => p.a === e.a)?.y ?? yBase;
+        return (
+          <g key={e.a}>
+            <line x1={x(e.a)} x2={x(e.a)} y1={yBase} y2={above ? yL + 10 : yL - 6}
+              stroke={e.c} strokeWidth="0.6" strokeDasharray="2 2" />
+            <circle cx={x(e.a)} cy={cy} r="3" fill={e.c} stroke="#dfdfdb" strokeWidth="1.5" />
+            <circle cx={x(e.a)} cy={yBase} r="3" fill={e.c} />
+            <text x={x(e.a)} y={yL} fontSize="9" fill={e.c} textAnchor="middle"
+              fontFamily="JetBrains Mono, monospace" letterSpacing="0.1em">{e.a}</text>
+            <text x={x(e.a)} y={yL + 13} fontSize="11" fill="#0a0a09" textAnchor="middle"
+              fontFamily="Cormorant Garamond, Georgia, serif" fontStyle="italic">{e.t}</text>
+          </g>
+        );
+      })}
+    </svg>
   );
 }
+
+// ── Reveal hook ──────────────────────────────────────────────
+function useReveal(rootRef: React.RefObject<Element | null>) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const els = root.querySelectorAll<HTMLElement>("[data-reveal]");
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            (entry.target as HTMLElement).style.opacity = "1";
+            (entry.target as HTMLElement).style.transform = "none";
+            (entry.target as HTMLElement).style.filter = "none";
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    els.forEach((el) => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(8px)";
+      el.style.filter = "blur(2px)";
+      el.style.transition = "opacity 550ms cubic-bezier(.2,.7,.2,1), transform 550ms cubic-bezier(.2,.7,.2,1), filter 550ms cubic-bezier(.2,.7,.2,1)";
+      obs.observe(el);
+    });
+    return () => obs.disconnect();
+  }, [rootRef]);
+}
+
+const T = {
+  paper: "#eeeeec",
+  cream: "#dfdfdb",
+  panel: "#f4f4f1",
+  ink: "#0a0a09",
+  ink2: "#33332f",
+  line: "rgba(10,10,9,0.12)",
+  line2: "rgba(10,10,9,0.26)",
+  accent: "#0a0a09",
+  mute: "rgba(10,10,9,0.55)",
+  gold: "#7a7a72",
+};
+
+const MONO = "JetBrains Mono, monospace";
+const SERIF = "Cormorant Garamond, Georgia, serif";
+const BODY = "Geist, Inter, system-ui, sans-serif";
 
 export default function LandingPage() {
-  return (
-    <div className="min-h-screen bg-[#F8F9FC] text-[#1A1A2E] font-sans">
-      {/* Navigation */}
-      <nav className="flex items-center justify-between px-6 py-5 md:px-12 lg:px-24 bg-white border-b border-gray-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
-            <img src={logoImg} alt="Clarifin" className="w-full h-full object-cover" />
-          </div>
-          <span className="text-lg font-bold text-[#1A1A2E] tracking-tight">Clarifin</span>
-        </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500">
-          <a href="#features" className="hover:text-[#1A1A2E] transition-colors">Features</a>
-          <a href="#use-cases" className="hover:text-[#1A1A2E] transition-colors">Use Cases</a>
-          <a href="#methodology" className="hover:text-[#1A1A2E] transition-colors">How It Works</a>
-        </div>
-        <div className="flex items-center gap-3">
-          <a href="/sign-in" className="hidden md:block text-sm font-medium text-gray-500 hover:text-[#1A1A2E] transition-colors">
-            Sign in
-          </a>
-          <a href="/sign-up">
-            <button className="bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] text-sm font-bold px-5 py-2.5 rounded-xl transition-colors">
-              Get started
-            </button>
-          </a>
-        </div>
-      </nav>
+  const rootRef = useRef<HTMLDivElement>(null);
+  useReveal(rootRef);
 
-      {/* Hero */}
-      <section className="px-6 pt-20 pb-24 md:px-12 lg:px-24 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
-        <div className="flex-1 space-y-8">
-          <div className="inline-flex items-center gap-2 bg-[#FFF9E6] border border-yellow-200 rounded-full px-4 py-1.5">
-            <Zap className="w-3.5 h-3.5 text-[#FACC15]" strokeWidth={2.5} />
-            <span className="text-xs font-semibold text-[#1A1A2E]">AI-powered financial simulation</span>
+  return (
+    <div ref={rootRef} style={{
+      minHeight: "100vh", background: T.paper, color: T.ink,
+      fontFamily: BODY, display: "grid", gridTemplateColumns: "92px 1fr",
+    }}>
+      {/* Vertical rail */}
+      <div style={{
+        borderRight: `1px solid ${T.line}`,
+        display: "flex", flexDirection: "column", alignItems: "center",
+        padding: "32px 0", justifyContent: "space-between",
+        position: "sticky", top: 0, height: "100vh",
+      }}>
+        <BrandMark size={30} />
+        <div style={{
+          writingMode: "vertical-rl", transform: "rotate(180deg)",
+          fontFamily: MONO, fontSize: 10, letterSpacing: "0.32em", color: T.ink2,
+        }}>
+          CLARIFIN — A PERSONAL FINANCE SIMULATOR
+        </div>
+        <div style={{
+          fontFamily: MONO, fontSize: 9, letterSpacing: "0.3em", color: T.mute,
+          writingMode: "vertical-rl", transform: "rotate(180deg)",
+        }}>
+          EST. 2026
+        </div>
+      </div>
+
+      <div>
+        {/* Nav */}
+        <div data-reveal style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          padding: "22px 48px", borderBottom: `1px solid ${T.line}`,
+        }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute }}>
+            ISSUE № 04 · APRIL 2026
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] text-[#1A1A2E]">
-            Clarity before <br />
-            <span className="text-[#FACC15]" style={{ WebkitTextStroke: "1px #D4A800" }}>commitment.</span>
-          </h1>
-          <p className="text-lg text-gray-500 max-w-lg leading-relaxed">
-            Test financial decisions in a safe environment. Compare debt strategies, model mortgages, and simulate retirement paths — before risking real capital.
-          </p>
-          <div className="flex items-center gap-4">
-            <a href="/sign-up">
-              <button className="bg-[#1A1A2E] hover:bg-[#2d2d4e] text-white font-bold px-8 py-3.5 rounded-xl transition-colors text-sm">
-                Run your first scenario
-              </button>
-            </a>
-            <a href="/sign-in" className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-[#1A1A2E] transition-colors group">
-              Sign in <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          <div style={{ display: "flex", gap: 34, fontSize: 13.5, color: T.ink2 }}>
+            {["The Studio", "The Method", "Examples", "Journal"].map((x) => (
+              <span key={x} style={{ cursor: "pointer" }}>{x}</span>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+            <a href="/sign-in" style={{ fontSize: 13, color: T.ink2, textDecoration: "none" }}>Sign in</a>
+            <a href="/sign-up" style={{ textDecoration: "none" }}>
+              <button style={{
+                background: T.ink, color: T.paper, border: "none", padding: "10px 22px",
+                fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", cursor: "pointer",
+                borderRadius: 0,
+              }}>BEGIN →</button>
             </a>
           </div>
-          {/* Social proof */}
-          <div className="flex items-center gap-6 pt-2">
+        </div>
+
+        {/* Hero */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1fr", minHeight: 720 }}>
+          {/* Left hero */}
+          <div style={{
+            padding: "80px 56px 60px",
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+            borderRight: `1px solid ${T.line}`,
+          }}>
+            <div>
+              <div data-reveal style={{
+                fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.22em",
+                color: T.accent, marginBottom: 36, display: "flex", alignItems: "center", gap: 12,
+              }}>
+                <span style={{ display: "inline-block", width: 24, height: 1, background: T.accent }} />
+                ON THINKING IN DECADES
+              </div>
+              <div data-reveal style={{
+                fontFamily: SERIF, fontSize: 140, lineHeight: 0.92, letterSpacing: -4,
+                fontWeight: 400, color: T.ink,
+              }}>
+                What<br /><em style={{ color: T.accent }}>if.</em>
+              </div>
+              <div data-reveal style={{
+                fontFamily: SERIF, fontSize: 28, fontStyle: "italic",
+                color: T.ink2, marginTop: 32, maxWidth: 500, lineHeight: 1.3,
+              }}>
+                Two small words behind<br />most of the expensive decisions<br />of a life.
+              </div>
+              <div data-reveal style={{
+                maxWidth: 480, marginTop: 28, fontSize: 15, lineHeight: 1.65, color: T.ink2,
+                fontFamily: BODY,
+              }}>
+                Clarifin is a simulator for the big what-ifs — the move, the baby, the business,
+                the sabbatical, the exit. See them play out, in real dollars, before you commit a single one.
+              </div>
+            </div>
+            <div data-reveal style={{ display: "flex", gap: 22, alignItems: "center", marginTop: 48 }}>
+              <a href="/sign-up" style={{ textDecoration: "none" }}>
+                <button style={{
+                  background: T.ink, color: T.paper, border: "none", padding: "17px 34px",
+                  fontFamily: MONO, fontSize: 11.5, letterSpacing: "0.18em", cursor: "pointer",
+                  fontWeight: 500, borderRadius: 0,
+                }}>RUN MY NUMBERS →</button>
+              </a>
+              <div style={{ fontSize: 12.5, color: T.mute }}>
+                or{" "}
+                <span style={{ textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer" }}>
+                  a 90-second tour ↗
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right hero panel */}
+          <div data-reveal style={{
+            padding: "56px 48px", background: T.cream, position: "relative",
+            overflow: "hidden", display: "flex", flexDirection: "column",
+          }}>
+            <div style={{
+              display: "flex", justifyContent: "space-between",
+              fontFamily: MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 22,
+            }}>
+              <span>FIG. 01 — A LIFE, LAID OUT</span>
+              <span>AGES 34 → 92</span>
+            </div>
+            <div style={{
+              fontFamily: SERIF, fontSize: 26, fontStyle: "italic",
+              lineHeight: 1.3, marginBottom: 32, color: T.ink,
+            }}>
+              Every decision<br />is also a clock.
+            </div>
+            <HeroTimeline />
+            <div style={{
+              display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18,
+              marginTop: 32, paddingTop: 26, borderTop: `1px solid ${T.line}`,
+            }}>
+              {[
+                ["Real dollars", "Inflation is stripped out. The numbers you see are the numbers you'll feel."],
+                ["No bank login", "You type what you know. Nothing leaves your device."],
+                ["Decades at a glance", "Thirty years of your money on one quiet page."],
+                ["Yours forever", "Export to PDF or carry your plan offline."],
+              ].map(([title, desc]) => (
+                <div key={title}>
+                  <div style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 500, marginBottom: 4 }}>{title}</div>
+                  <div style={{ fontSize: 12.5, color: T.ink2, lineHeight: 1.5 }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Section II: Questions */}
+        <div style={{ padding: "100px 56px", borderTop: `1px solid ${T.line}` }}>
+          <div data-reveal style={{
+            fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.22em",
+            color: T.accent, marginBottom: 18,
+          }}>
+            II. THE QUESTIONS PEOPLE BRING
+          </div>
+          <div data-reveal style={{
+            fontFamily: SERIF, fontSize: 60, lineHeight: 1.05, letterSpacing: -1.5,
+            fontWeight: 400, maxWidth: 960, marginBottom: 52,
+          }}>
+            Most of them start with <em style={{ color: T.accent }}>"can we afford…"</em><br />
+            and end with a feeling. We turn them into numbers.
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0 }}>
             {[
-              { value: "47k+", label: "Scenarios run" },
-              { value: "94%", label: "Feel confident" },
-              { value: "$2.4M", label: "Avg. modeled" },
-            ].map((s) => (
-              <div key={s.label}>
-                <p className="text-xl font-bold text-[#1A1A2E]">{s.value}</p>
-                <p className="text-xs text-gray-400">{s.label}</p>
+              ['"Can I take a year off without derailing retirement?"', "Sabbatical", "14 months"],
+              ['"Can we afford a second home in Portugal?"', "Second home", "+$420k"],
+              ['"If I leave my job at 45, what do I need saved?"', "Early exit", "$2.8M"],
+              ['"Can we swing private school for both kids?"', "Education", "$340k"],
+              ['"Should we move closer to family?"', "Relocation", "−$180k"],
+              ['"What if the market drops 30% next year?"', "Stress test", "91% OK"],
+            ].map(([q, tag, cost], i) => (
+              <div
+                data-reveal
+                key={i}
+                style={{
+                  padding: "26px 28px",
+                  borderTop: `1px solid ${T.line}`,
+                  borderBottom: i >= 3 ? `1px solid ${T.line}` : "none",
+                  borderRight: i % 3 < 2 ? `1px solid ${T.line}` : "none",
+                  cursor: "pointer",
+                  minHeight: 180,
+                  display: "flex", flexDirection: "column", justifyContent: "space-between",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = T.cream; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                <div style={{ fontFamily: SERIF, fontSize: 22, fontStyle: "italic", lineHeight: 1.3, color: T.ink }}>
+                  {q}
+                </div>
+                <div style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  marginTop: 20, fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.12em", color: T.mute,
+                }}>
+                  <span>{(tag as string).toUpperCase()}</span>
+                  <span style={{ color: T.accent }}>{cost}</span>
+                </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="flex-1 w-full max-w-xl">
-          <DashboardMockup />
-        </div>
-      </section>
 
-      {/* Philosophy banner */}
-      <section className="bg-[#1A1A2E] py-20">
-        <div className="px-6 md:px-12 lg:px-24 max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-5">A rational approach to wealth.</h2>
-          <p className="text-lg text-white/60 leading-relaxed">
-            Financial anxiety stems from uncertainty. By wrapping sophisticated modeling tools in a simple interface, we help you replace assumptions with mathematics.
-          </p>
-        </div>
-      </section>
-
-      {/* Use Cases */}
-      <section id="use-cases" className="px-6 py-24 md:px-12 lg:px-24 max-w-7xl mx-auto">
-        <p className="text-xs font-bold text-[#FACC15] uppercase tracking-widest mb-3">Decisions worth simulating</p>
-        <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-[#1A1A2E]">Three life-changing scenarios.</h2>
-        <p className="text-gray-500 text-lg mb-14 max-w-xl">
-          The biggest financial crossroads people face. Clarifin gives you the model before you make the move.
-        </p>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div>
-            <UseCaseCard
-              icon={<TrendingUp className="w-6 h-6 text-[#1A1A2E]" strokeWidth={2} />}
-              color="#FACC15"
-              bg="bg-[#FFF9E6]"
-              title="Pay off debt vs. invest"
-              subtitle="Model the true opportunity cost of carrying debt."
-            />
-            <div className="mt-4">
-              <p className="text-xs uppercase tracking-widest text-gray-400 mb-1.5">01 / Debt</p>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                See exactly how much interest costs you over time, and whether investing beats paying down early.
-              </p>
-            </div>
+        {/* Section III: Method */}
+        <div style={{ padding: "100px 56px", background: T.cream, borderTop: `1px solid ${T.line}` }}>
+          <div data-reveal style={{
+            fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.22em",
+            color: T.accent, marginBottom: 18,
+          }}>
+            III. THE METHOD
           </div>
-          <div>
-            <UseCaseCard
-              icon={<PiggyBank className="w-6 h-6 text-white" strokeWidth={2} />}
-              color="#3B82F6"
-              bg="bg-[#EFF6FF]"
-              title="When does work become optional?"
-              subtitle="Find your exact financial independence date."
-            />
-            <div className="mt-4">
-              <p className="text-xs uppercase tracking-widest text-gray-400 mb-1.5">02 / Retirement</p>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Simulate savings rates, returns, and inflation to find when you hit your number.
-              </p>
-            </div>
+          <div data-reveal style={{
+            fontFamily: SERIF, fontSize: 52, lineHeight: 1.05, letterSpacing: -1.2,
+            fontWeight: 400, maxWidth: 860, marginBottom: 60,
+          }}>
+            Three small moves,<br />in sequence, every time.
           </div>
-          <div>
-            <UseCaseCard
-              icon={<Home className="w-6 h-6 text-white" strokeWidth={2} />}
-              color="#22C55E"
-              bg="bg-[#F0FDF4]"
-              title="Buy vs. rent, for your market"
-              subtitle="Factor taxes, maintenance, and opportunity cost."
-            />
-            <div className="mt-4">
-              <p className="text-xs uppercase tracking-widest text-gray-400 mb-1.5">03 / Real Estate</p>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Make the most consequential purchase of your life with confidence, not guesswork.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Yellow CTA strip */}
-      <section className="bg-[#FACC15] py-16">
-        <div className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-[#1A1A2E] tracking-tight">Ready to run your first scenario?</h2>
-            <p className="text-[#1A1A2E]/70 mt-2">Free to start. No credit card required.</p>
-          </div>
-          <a href="/sign-up">
-            <button className="bg-[#1A1A2E] text-white font-bold px-8 py-3.5 rounded-xl hover:bg-[#2d2d4e] transition-colors text-sm whitespace-nowrap">
-              Start simulating →
-            </button>
-          </a>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="px-6 py-24 md:px-12 lg:px-24 max-w-7xl mx-auto">
-        <p className="text-xs font-bold text-[#FACC15] uppercase tracking-widest mb-3">Features</p>
-        <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-14 text-[#1A1A2E]">Built for serious decisions.</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            {
-              icon: <Compass className="w-5 h-5 text-[#1A1A2E]" strokeWidth={1.8} />,
-              bg: "bg-[#FFF9E6]",
-              title: "Scenario Comparison",
-              body: "Run Plan A vs. Plan B side by side. See exactly which path builds more wealth over your chosen horizon.",
-            },
-            {
-              icon: <Target className="w-5 h-5 text-white" strokeWidth={1.8} />,
-              bg: "bg-[#1A1A2E]",
-              title: "Retirement Trajectories",
-              body: "Model savings rates, expected returns, and inflation scenarios to understand precisely when work becomes optional.",
-              dark: true,
-            },
-            {
-              icon: <Shield className="w-5 h-5 text-[#1A1A2E]" strokeWidth={1.8} />,
-              bg: "bg-[#FFF9E6]",
-              title: "Real Estate Economics",
-              body: "Factor maintenance, taxes, insurance, and opportunity cost. Make the buy vs. rent decision with empirical data.",
-            },
-          ].map((f, i) => (
-            <div key={i} className={`${f.bg} rounded-2xl p-8 space-y-5`}>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${f.dark ? "bg-[#FACC15]" : "bg-[#1A1A2E]"}`}>
-                {f.icon}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 40 }}>
+            {[
+              ["i.", "Sketch", "Tell us who you are. Rough is fine — five numbers, two minutes."],
+              ["ii.", "Ask", "Describe the thing you are considering. A year off, a move, an exit."],
+              ["iii.", "Read", "We run 10,000 paths through the next 60 years and tell you what survives."],
+            ].map(([n, title, desc]) => (
+              <div data-reveal key={n as string}>
+                <div style={{
+                  fontFamily: SERIF, fontSize: 52, fontStyle: "italic",
+                  color: T.accent, marginBottom: 12, fontWeight: 400,
+                }}>{n}</div>
+                <div style={{ fontFamily: SERIF, fontSize: 30, fontWeight: 400, marginBottom: 10, letterSpacing: -0.4 }}>{title}</div>
+                <div style={{ fontSize: 14, color: T.ink2, lineHeight: 1.55, maxWidth: 300, fontFamily: BODY }}>{desc}</div>
               </div>
-              <h3 className={`text-xl font-bold tracking-tight ${f.dark ? "text-white" : "text-[#1A1A2E]"}`}>{f.title}</h3>
-              <p className={`leading-relaxed text-sm ${f.dark ? "text-white/60" : "text-gray-500"}`}>{f.body}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </section>
 
-      {/* Methodology */}
-      <section id="methodology" className="px-6 py-24 md:px-12 lg:px-24 max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-16 items-center">
-          {/* Left: visual mockup */}
-          <div className="bg-[#1A1A2E] rounded-2xl p-6 space-y-4">
-            <p className="text-white/50 text-xs font-medium uppercase tracking-widest">AI Advisor</p>
-            <div className="space-y-3">
-              {[
-                { q: true, text: "Should I pay off my student loans or invest in my 401k?" },
-                { q: false, text: "Great question! Based on your 6.8% loan rate vs. an expected 8% market return, investing likely wins — but let's model both." },
-                { q: true, text: "What's my FIRE number at current savings rate?" },
-                { q: false, text: "At $3,200/mo savings with 7% returns, you hit $1.2M in 14.3 years. Increasing to $4,000/mo cuts that to 11.8 years." },
-              ].map((msg, i) => (
-                <div key={i} className={`flex ${msg.q ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] px-3 py-2 rounded-xl text-xs leading-relaxed ${
-                    msg.q ? "bg-[#FACC15] text-[#1A1A2E] font-medium" : "bg-white/10 text-white/80"
-                  }`}>
-                    {msg.text}
-                  </div>
+        {/* Editorial quote */}
+        <div style={{ padding: "100px 56px", borderTop: `1px solid ${T.line}` }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 80, alignItems: "center" }}>
+            <div data-reveal>
+              <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.22em", color: T.accent, marginBottom: 18 }}>
+                A LETTER FROM THE STUDIO
+              </div>
+              <div style={{
+                fontFamily: SERIF, fontSize: 34, fontStyle: "italic",
+                lineHeight: 1.3, letterSpacing: -0.3, color: T.ink,
+              }}>
+                "The best financial plan is the one you've rehearsed out loud, twice.
+                Clarifin is the quiet room for the rehearsal."
+              </div>
+              <div style={{ marginTop: 24, fontFamily: MONO, fontSize: 11, letterSpacing: "0.15em", color: T.mute }}>
+                — E. HALVERSON, FOUNDER
+              </div>
+            </div>
+            <div data-reveal style={{
+              aspectRatio: "4/3",
+              background: `repeating-linear-gradient(135deg, ${T.cream}, ${T.cream} 10px, ${T.paper} 10px, ${T.paper} 20px)`,
+              border: `1px solid ${T.line2}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              position: "relative",
+            }}>
+              <div style={{
+                position: "absolute", inset: 32,
+                background: T.panel, border: `1px solid ${T.line2}`,
+                display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 28,
+              }}>
+                <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute }}>
+                  PORTRAIT · PLACEHOLDER
                 </div>
-              ))}
-            </div>
-            <div className="flex gap-2 mt-4">
-              <div className="flex-1 bg-white/10 rounded-xl px-3 py-2 text-xs text-white/40">Ask a question...</div>
-              <div className="w-8 h-8 bg-[#FACC15] rounded-xl flex items-center justify-center">
-                <ArrowRight className="w-3.5 h-3.5 text-[#1A1A2E]" />
+                <div style={{ fontFamily: SERIF, fontSize: 22, fontStyle: "italic", color: T.ink2 }}>
+                  "Founder at desk, late afternoon"
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Right: copy */}
-          <div className="space-y-8">
-            <p className="text-xs font-bold text-[#FACC15] uppercase tracking-widest">How it works</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-[1.1] text-[#1A1A2E]">
-              Signal, not noise.
-            </h2>
-            <p className="text-lg text-gray-500 leading-relaxed">
-              Most financial tools keep you endlessly engaged. Clarifin is designed to give you a clear answer — so you can close the app and get back to your life.
-            </p>
-            <ul className="space-y-4">
-              {[
-                "Deterministic forecasting models",
-                "Tax-adjusted compounding",
-                "AI advisor trained on financial planning",
-                "Historical sequence-of-returns analysis",
-              ].map((item, i) => (
-                <li key={i} className="flex items-center gap-3 text-[#1A1A2E] font-medium">
-                  <div className="w-5 h-5 rounded-full bg-[#FACC15] flex items-center justify-center shrink-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#1A1A2E]" />
-                  </div>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
-      </section>
 
-      {/* Stats */}
-      <section className="bg-white border-y border-gray-100 py-16">
-        <div className="px-6 md:px-12 lg:px-24 max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
-          {[
-            { value: "47k+", label: "Scenarios simulated" },
-            { value: "12 min", label: "Avg. time to clarity" },
-            { value: "94%", label: "Feel more confident" },
-            { value: "$2.4M", label: "Avg. net worth modeled" },
-          ].map((stat, i) => (
-            <div key={i} className="space-y-1">
-              <p className="text-4xl font-bold text-[#1A1A2E]">{stat.value}</p>
-              <p className="text-xs text-gray-400 uppercase tracking-widest">{stat.label}</p>
+        {/* CTA band */}
+        <div style={{
+          padding: "80px 56px", background: T.ink, color: T.paper,
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}>
+          <div>
+            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.22em", color: T.mute, marginBottom: 12 }}>
+              START ANYWHERE
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="py-28 text-center px-6">
-        <div className="max-w-xl mx-auto space-y-7">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden mx-auto">
-            <img src={logoImg} alt="Clarifin" className="w-full h-full object-cover" />
+            <div style={{
+              fontFamily: SERIF, fontSize: 60, lineHeight: 1, letterSpacing: -1.5, fontWeight: 400,
+            }}>
+              What would you<br /><em style={{ color: T.mute }}>rehearse</em> first?
+            </div>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1A1A2E]">Ready for clarity?</h2>
-          <p className="text-lg text-gray-500 max-w-md mx-auto">
-            Join thousands of thoughtful people who use Clarifin to chart their financial future.
-          </p>
-          <a href="/sign-up">
-            <button className="bg-[#FACC15] hover:bg-yellow-300 text-[#1A1A2E] font-bold px-10 py-4 rounded-xl transition-colors text-base mt-2 inline-block">
-              Begin simulation →
-            </button>
+          <a href="/sign-up" style={{ textDecoration: "none" }}>
+            <button style={{
+              background: T.paper, color: T.ink, border: "none", padding: "22px 40px",
+              fontFamily: MONO, fontSize: 12, letterSpacing: "0.18em", cursor: "pointer",
+              fontWeight: 500, borderRadius: 0,
+            }}>BEGIN A STUDY →</button>
           </a>
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="px-6 py-10 md:px-12 lg:px-24 border-t border-gray-100 bg-white">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
-              <img src={logoImg} alt="Clarifin" className="w-full h-full object-cover" />
-            </div>
-            <span className="text-base font-bold text-[#1A1A2E] tracking-tight">Clarifin</span>
-          </div>
-          <div className="flex gap-8 text-sm text-gray-400">
-            <a href="#" className="hover:text-[#1A1A2E] transition-colors">Privacy</a>
-            <a href="#" className="hover:text-[#1A1A2E] transition-colors">Terms</a>
-            <a href="#methodology" className="hover:text-[#1A1A2E] transition-colors">How It Works</a>
-          </div>
-          <div className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} Clarifin. All rights reserved.
-          </div>
+        {/* Footer */}
+        <div style={{
+          padding: "36px 56px", background: T.paper, color: T.mute,
+          fontFamily: MONO, fontSize: 10, letterSpacing: "0.15em",
+          display: "flex", justifyContent: "space-between",
+          borderTop: `1px solid ${T.line}`,
+        }}>
+          <span>CLARIFIN · INDEPENDENT · NOT AN ADVISOR</span>
+          <span>PRIVACY · TERMS · CONTACT</span>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

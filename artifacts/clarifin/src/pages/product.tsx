@@ -11,6 +11,17 @@ import {
   type AtriumScenario, type AtriumEvent, type JournalEntry, type Intake,
 } from "@/lib/atrium-engine"
 
+// ─── Mobile hook ──────────────────────────────────────────────────────────────
+function useMobile() {
+  const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768)
+  useEffect(() => {
+    const h = () => setMobile(window.innerWidth < 768)
+    window.addEventListener("resize", h)
+    return () => window.removeEventListener("resize", h)
+  }, [])
+  return mobile
+}
+
 // ─── Brand mark ───────────────────────────────────────────────────────────────
 function BrandMark({ size = 18 }: { size?: number }) {
   return (
@@ -74,24 +85,25 @@ function OverviewScreen({ intake, curS, result, setTab, scenarios, setActiveId }
   intake: Intake; curS: AtriumScenario; result: ReturnType<typeof simulateAtrium>;
   setTab: (t: string) => void; scenarios: AtriumScenario[]; setActiveId: (id: string) => void
 }) {
+  const isMobile = useMobile()
   return (
-    <div style={{ padding: "56px 56px 80px", display: "grid", gridTemplateColumns: "1fr 280px", gap: 56, maxWidth: 1500, margin: "0 auto" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+    <div style={{ padding: isMobile ? "24px 16px 48px" : "56px 56px 80px", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 280px", gap: isMobile ? 32 : 56, maxWidth: 1500, margin: "0 auto" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 32 : 48 }}>
         {/* Hero */}
         <div>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 16 }}>YOU ASKED</div>
-          <div style={{ fontFamily: F.display, fontSize: 38, fontStyle: "italic", lineHeight: 1.18, letterSpacing: -0.5, color: T.ink2, marginBottom: 28, maxWidth: 720 }}>
+          <div style={{ fontFamily: F.display, fontSize: isMobile ? 22 : 38, fontStyle: "italic", lineHeight: 1.18, letterSpacing: -0.5, color: T.ink2, marginBottom: isMobile ? 16 : 28, maxWidth: 720 }}>
             "{intake.question?.toLowerCase() || "the shape of things"}"
           </div>
-          <div style={{ fontFamily: F.display, fontSize: 80, lineHeight: 1, letterSpacing: -2, fontWeight: 400, color: result.ruinAge ? T.claret : T.ink, marginBottom: 18 }}>
+          <div style={{ fontFamily: F.display, fontSize: isMobile ? 44 : 80, lineHeight: 1, letterSpacing: isMobile ? -1 : -2, fontWeight: 400, color: result.ruinAge ? T.claret : T.ink, marginBottom: 18 }}>
             {result.ruinAge ? <>Tight, <em>but workable.</em></> : <>Yes, <em style={{ color: T.accent }}>it holds.</em></>}
           </div>
-          <div style={{ fontFamily: F.display, fontSize: 18, fontStyle: "italic", color: T.ink2, lineHeight: 1.5, maxWidth: 640 }}>
+          <div style={{ fontFamily: F.display, fontSize: isMobile ? 15 : 18, fontStyle: "italic", color: T.ink2, lineHeight: 1.5, maxWidth: 640 }}>
             {result.ruinAge
               ? `As drawn, the plan depletes at ${result.ruinAge}. The most leveraged moves are trimming retirement spend by ~8%, or pushing retire-age by two years.`
               : `The plan carries through to ${curS.endAge} with room. A gentle glide — your largest levers are save rate and spend, in that order.`}
           </div>
-          <div style={{ display: "flex", gap: 36, marginTop: 32, paddingTop: 24, borderTop: `1px solid ${T.line}` }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: isMobile ? 20 : 36, marginTop: 32, paddingTop: 24, borderTop: `1px solid ${T.line}` }}>
             {[
               ["At retirement", fmtA(result.atRetire.nw, { short: true }), `age ${curS.retireAge}`],
               ["Peak", fmtA(result.peak.nw, { short: true }), `age ${result.peak.age}`],
@@ -116,8 +128,8 @@ function OverviewScreen({ intake, curS, result, setTab, scenarios, setActiveId }
         </div>
       </div>
 
-      {/* Right rail — scenarios */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 18, marginTop: 4 }}>
+      {/* Right rail — scenarios (hidden on mobile) */}
+      <div style={{ display: isMobile ? "none" : "flex", flexDirection: "column", gap: 18, marginTop: 4 }}>
         <div>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 14 }}>SCENARIOS</div>
           {scenarios.map((s) => {
@@ -151,6 +163,7 @@ function CompareScreen({ scenarios, setScenarios, activeId, setActiveId }: {
   scenarios: AtriumScenario[]; setScenarios: (s: AtriumScenario[]) => void;
   activeId: string; setActiveId: (id: string) => void
 }) {
+  const isMobile = useMobile()
   const results = scenarios.map((s) => ({ s, r: simulateAtrium(s) }))
   const W = 1100, H = 340
   const all = results.flatMap((x) => x.r.path)
@@ -172,11 +185,11 @@ function CompareScreen({ scenarios, setScenarios, activeId, setActiveId }: {
   }
 
   return (
-    <div style={{ padding: "36px 48px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
+    <div style={{ padding: isMobile ? "20px 16px" : "36px 48px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, gap: 12 }}>
         <div>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute, marginBottom: 6 }}>COMPARE</div>
-          <div style={{ fontFamily: F.display, fontSize: 44, letterSpacing: -0.8, fontWeight: 400 }}>Laying them side by side.</div>
+          <div style={{ fontFamily: F.display, fontSize: isMobile ? 28 : 44, letterSpacing: -0.8, fontWeight: 400 }}>Laying them side by side.</div>
         </div>
         <button onClick={addScenario} style={{ background: T.ink, color: T.paper, border: "none", padding: "12px 22px", fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.14em", cursor: "pointer" }}>+ NEW SCENARIO</button>
       </div>
@@ -250,6 +263,7 @@ function CompareScreen({ scenarios, setScenarios, activeId, setActiveId }: {
 
 // ─── Stress screen ────────────────────────────────────────────────────────────
 function StressScreen({ curS }: { curS: AtriumScenario }) {
+  const isMobile = useMobile()
   const tests = [
     { k: "2008", label: "2008 replay", survival: 91, pct: -0.37, desc: "A 37% drawdown in year 3, recovering over 4 years." },
     { k: "lost", label: "Lost decade", survival: 68, pct: -0.02, desc: "Ten years of flat returns starting today." },
@@ -260,10 +274,10 @@ function StressScreen({ curS }: { curS: AtriumScenario }) {
   ]
 
   return (
-    <div style={{ padding: "36px 48px" }}>
+    <div style={{ padding: isMobile ? "20px 16px" : "36px 48px" }}>
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute, marginBottom: 6 }}>STRESS</div>
-        <div style={{ fontFamily: F.display, fontSize: 48, letterSpacing: -0.9, lineHeight: 1.05 }}>
+        <div style={{ fontFamily: F.display, fontSize: isMobile ? 32 : 48, letterSpacing: -0.9, lineHeight: 1.05 }}>
           What survives <em style={{ color: T.accent }}>weather.</em>
         </div>
         <div style={{ fontSize: 14, color: T.ink2, marginTop: 10, maxWidth: 640, lineHeight: 1.55 }}>
@@ -271,17 +285,17 @@ function StressScreen({ curS }: { curS: AtriumScenario }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: isMobile ? 10 : 14 }}>
         {tests.map((t) => (
-          <div key={t.k} style={{ padding: 24, border: `1px solid ${T.line}`, background: T.paper, display: "flex", flexDirection: "column", gap: 12, minHeight: 220 }}>
+          <div key={t.k} style={{ padding: isMobile ? 16 : 24, border: `1px solid ${T.line}`, background: T.paper, display: "flex", flexDirection: "column", gap: 12, minHeight: isMobile ? 160 : 220 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: F.display, fontSize: 22, fontWeight: 500 }}>{t.label}</span>
+              <span style={{ fontFamily: F.display, fontSize: isMobile ? 16 : 22, fontWeight: 500 }}>{t.label}</span>
               <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: T.mute, letterSpacing: "0.14em" }}>{(t.pct * 100).toFixed(0)}%</span>
             </div>
-            <div style={{ fontSize: 13, color: T.ink2, lineHeight: 1.5, flex: 1 }}>{t.desc}</div>
+            {!isMobile && <div style={{ fontSize: 13, color: T.ink2, lineHeight: 1.5, flex: 1 }}>{t.desc}</div>}
             <div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <div style={{ fontFamily: F.display, fontSize: 54, fontWeight: 400, letterSpacing: -1, color: t.survival > 80 ? T.sage : t.survival > 60 ? T.accent : T.claret, lineHeight: 1 }}>{t.survival}%</div>
+                <div style={{ fontFamily: F.display, fontSize: isMobile ? 36 : 54, fontWeight: 400, letterSpacing: -1, color: t.survival > 80 ? T.sage : t.survival > 60 ? T.accent : T.claret, lineHeight: 1 }}>{t.survival}%</div>
                 <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: T.mute, letterSpacing: "0.14em" }}>SURVIVE</div>
               </div>
               <div style={{ height: 3, background: T.cream, marginTop: 8, position: "relative" }}>
@@ -306,6 +320,7 @@ function StressScreen({ curS }: { curS: AtriumScenario }) {
 function EventsScreen({ curS, setScenario }: {
   curS: AtriumScenario; setScenario: (patch: Partial<AtriumScenario>) => void
 }) {
+  const isMobile = useMobile()
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -351,12 +366,12 @@ function EventsScreen({ curS, setScenario }: {
   const updEvent = (id: string, patch: Partial<AtriumEvent>) => setScenario({ events: curS.events.map((e) => e.id === id ? { ...e, ...patch } : e) })
 
   return (
-    <div style={{ padding: "36px 48px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
+    <div style={{ padding: isMobile ? "20px 16px" : "36px 48px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, gap: 12 }}>
         <div>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute, marginBottom: 6 }}>EVENTS</div>
-          <div style={{ fontFamily: F.display, fontSize: 44, letterSpacing: -0.8 }}>A life, as <em style={{ color: T.accent }}>chapters</em>.</div>
-          <div style={{ fontSize: 13, color: T.ink2, marginTop: 8 }}>Drag the dots left or right to try what-ifs. Each event reshapes the curve.</div>
+          <div style={{ fontFamily: F.display, fontSize: isMobile ? 28 : 44, letterSpacing: -0.8 }}>A life, as <em style={{ color: T.accent }}>chapters</em>.</div>
+          <div style={{ fontSize: 13, color: T.ink2, marginTop: 8 }}>{isMobile ? "Tap a card to edit events." : "Drag the dots left or right to try what-ifs. Each event reshapes the curve."}</div>
         </div>
         <button onClick={addEvent} style={{ background: T.ink, color: T.paper, border: "none", padding: "12px 22px", fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.14em", cursor: "pointer" }}>+ ADD EVENT</button>
       </div>
@@ -426,6 +441,7 @@ function EventsScreen({ curS, setScenario }: {
 function AssumptionsScreen({ curS, setScenario }: {
   curS: AtriumScenario; setScenario: (patch: Partial<AtriumScenario>) => void
 }) {
+  const isMobile = useMobile()
   const fields = [
     { k: "age", label: "Current age", val: curS.age, unit: "years", min: 18, max: 80, step: 1, onChange: (v: number) => setScenario({ age: v }) },
     { k: "retireAge", label: "Retire at", val: curS.retireAge, unit: "years", min: 45, max: 80, step: 1, onChange: (v: number) => setScenario({ retireAge: v }) },
@@ -439,19 +455,19 @@ function AssumptionsScreen({ curS, setScenario }: {
   ]
 
   return (
-    <div style={{ padding: "36px 48px" }}>
+    <div style={{ padding: isMobile ? "20px 16px" : "36px 48px" }}>
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute, marginBottom: 6 }}>ASSUMPTIONS</div>
-        <div style={{ fontFamily: F.display, fontSize: 44, letterSpacing: -0.8 }}>The <em style={{ color: T.accent }}>dials.</em></div>
+        <div style={{ fontFamily: F.display, fontSize: isMobile ? 28 : 44, letterSpacing: -0.8 }}>The <em style={{ color: T.accent }}>dials.</em></div>
         <div style={{ fontSize: 13, color: T.ink2, marginTop: 8 }}>Every number below is editable. We use real (inflation-adjusted) dollars throughout.</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: isMobile ? 10 : 16 }}>
         {fields.map((f) => (
-          <div key={f.k} style={{ padding: 22, background: T.cream, border: `1px solid ${T.line}` }}>
-            <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.16em", color: T.mute, marginBottom: 10 }}>{f.label.toUpperCase()}</div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 14 }}>
-              <div style={{ fontFamily: F.display, fontSize: 44, fontWeight: 400, letterSpacing: -0.8, color: T.ink, lineHeight: 1 }}>{f.val}</div>
-              <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: T.mute, letterSpacing: "0.08em" }}>{f.unit}</div>
+          <div key={f.k} style={{ padding: isMobile ? 14 : 22, background: T.cream, border: `1px solid ${T.line}` }}>
+            <div style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.16em", color: T.mute, marginBottom: 8 }}>{f.label.toUpperCase()}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 12 }}>
+              <div style={{ fontFamily: F.display, fontSize: isMobile ? 30 : 44, fontWeight: 400, letterSpacing: -0.8, color: T.ink, lineHeight: 1 }}>{f.val}</div>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: T.mute, letterSpacing: "0.08em" }}>{f.unit}</div>
             </div>
             <input type="range" min={f.min} max={f.max} step={f.step} value={f.val} onChange={(e) => f.onChange(+e.target.value)} style={{ width: "100%", accentColor: T.ink }} />
           </div>
@@ -463,6 +479,7 @@ function AssumptionsScreen({ curS, setScenario }: {
 
 // ─── Journal screen ───────────────────────────────────────────────────────────
 function JournalScreen({ journal, setJournal }: { journal: JournalEntry[]; setJournal: (j: JournalEntry[]) => void }) {
+  const isMobile = useMobile()
   const [draft, setDraft] = useState("")
 
   const add = () => {
@@ -480,11 +497,11 @@ function JournalScreen({ journal, setJournal }: { journal: JournalEntry[]; setJo
   ]
 
   return (
-    <div style={{ padding: "36px 48px", display: "grid", gridTemplateColumns: "1fr 380px", gap: 36 }}>
+    <div style={{ padding: isMobile ? "20px 16px" : "36px 48px", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 380px", gap: isMobile ? 24 : 36 }}>
       <div>
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute, marginBottom: 6 }}>JOURNAL</div>
-          <div style={{ fontFamily: F.display, fontSize: 44, letterSpacing: -0.8 }}>Notes to <em style={{ color: T.accent }}>your future self.</em></div>
+          <div style={{ fontFamily: F.display, fontSize: isMobile ? 28 : 44, letterSpacing: -0.8 }}>Notes to <em style={{ color: T.accent }}>your future self.</em></div>
         </div>
         <div style={{ background: T.cream, border: `1px solid ${T.line}`, padding: 20, marginBottom: 24 }}>
           <textarea
@@ -522,6 +539,7 @@ function JournalScreen({ journal, setJournal }: { journal: JournalEntry[]; setJo
 function ShareScreen({ intake, curS, result }: {
   intake: Intake; curS: AtriumScenario; result: ReturnType<typeof simulateAtrium>
 }) {
+  const isMobile = useMobile()
   const [copied, setCopied] = useState(false)
 
   const copyLink = () => {
@@ -542,11 +560,11 @@ function ShareScreen({ intake, curS, result }: {
   const chartLine = path.map((d, i) => (i === 0 ? "M" : "L") + px(d.age).toFixed(1) + "," + py(d.nw).toFixed(1)).join(" ")
 
   return (
-    <div style={{ padding: "36px 48px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 36 }}>
+    <div style={{ padding: isMobile ? "20px 16px" : "36px 48px", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 36 }}>
       <div>
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute, marginBottom: 6 }}>SHARE</div>
-          <div style={{ fontFamily: F.display, fontSize: 44, letterSpacing: -0.8 }}>A study, <em style={{ color: T.accent }}>on paper.</em></div>
+          <div style={{ fontFamily: F.display, fontSize: isMobile ? 28 : 44, letterSpacing: -0.8 }}>A study, <em style={{ color: T.accent }}>on paper.</em></div>
           <div style={{ fontSize: 13, color: T.ink2, marginTop: 8, maxWidth: 440 }}>Your plan exports as a quiet, beautifully typeset summary. You can also copy a link that encodes everything.</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -570,8 +588,8 @@ function ShareScreen({ intake, curS, result }: {
         </div>
       </div>
 
-      {/* PDF preview */}
-      <div style={{ background: T.paper, border: `1px solid ${T.line2}`, padding: 32, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }}>
+      {/* PDF preview — hidden on mobile */}
+      <div style={{ display: isMobile ? "none" : "block", background: T.paper, border: `1px solid ${T.line2}`, padding: 32, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }}>
         <div style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.22em", color: T.mute, marginBottom: 16 }}>PREVIEW · A4 · PORTRAIT</div>
         <div style={{ borderTop: `1px solid ${T.ink}`, borderBottom: `1px solid ${T.line}`, padding: "14px 0", display: "flex", justifyContent: "space-between", fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.18em", color: T.mute, marginBottom: 22 }}>
           <span>CLARIFIN · A STUDY</span>
@@ -597,6 +615,7 @@ function ShareScreen({ intake, curS, result }: {
 
 // ─── Upgrade modal ────────────────────────────────────────────────────────────
 function UpgradeModal({ onClose, onCheckout }: { onClose: () => void; onCheckout: (plan: string) => void }) {
+  const isMobile = useMobile()
   const [plan, setPlan] = useState("annual")
   const [stage, setStage] = useState<"form" | "processing" | "success">("form")
   const [card, setCard] = useState({ num: "4242 4242 4242 4242", exp: "12 / 28", cvc: "314", zip: "94110" })
@@ -612,9 +631,9 @@ function UpgradeModal({ onClose, onCheckout }: { onClose: () => void; onCheckout
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,10,9,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, backdropFilter: "blur(4px)" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: T.paper, color: T.ink, fontFamily: FONT_BODY, width: "min(960px, 100%)", display: "grid", gridTemplateColumns: "1.05fr 1fr", boxShadow: "0 40px 100px rgba(0,0,0,0.35)", maxHeight: "92vh", overflow: "auto" }}>
-        {/* Left */}
-        <div style={{ padding: "44px 44px", borderRight: `1px solid ${T.line}`, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 560 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: T.paper, color: T.ink, fontFamily: FONT_BODY, width: "min(960px, 100%)", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.05fr 1fr", boxShadow: "0 40px 100px rgba(0,0,0,0.35)", maxHeight: "92vh", overflow: "auto" }}>
+        {/* Left — hidden on mobile to save space */}
+        <div style={{ display: isMobile ? "none" : "flex", padding: "44px 44px", borderRight: `1px solid ${T.line}`, flexDirection: "column", justifyContent: "space-between", minHeight: 560 }}>
           <div>
             <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.accent, marginBottom: 18 }}>CLARIFIN · PRO</div>
             <div style={{ fontFamily: F.display, fontSize: 56, lineHeight: 1, letterSpacing: -1.5, fontWeight: 400, color: T.ink, marginBottom: 18 }}>
@@ -647,7 +666,7 @@ function UpgradeModal({ onClose, onCheckout }: { onClose: () => void; onCheckout
         </div>
 
         {/* Right — Stripe-style checkout */}
-        <div style={{ padding: "44px 44px", background: T.cream, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: isMobile ? "24px 20px" : "44px 44px", background: T.cream, display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute }}>SECURE CHECKOUT &nbsp;·&nbsp; STRIPE</div>
             <div onClick={onClose} style={{ cursor: "pointer", fontSize: 18, color: T.ink2 }}>×</div>
@@ -741,6 +760,7 @@ function ClarifinChat({ intake, curS, result, isPro, onUpgrade }: {
   intake: Intake; curS: AtriumScenario; result: ReturnType<typeof simulateAtrium>;
   isPro: boolean; onUpgrade: () => void
 }) {
+  const isMobile = useMobile()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([
     { role: "assistant", content: `Hello, ${intake.name?.split(" ")[0] || "there"}. I'm Clarifin — ask me anything about your plan, or what to try next.` },
@@ -809,11 +829,18 @@ function ClarifinChat({ intake, curS, result, isPro, onUpgrade }: {
 
       {open && (
         <div style={{
-          position: "fixed", bottom: 24, left: 24, zIndex: 800,
-          width: 400, height: 560, background: T.paper, color: T.ink,
+          position: "fixed",
+          bottom: isMobile ? 0 : 24,
+          left: isMobile ? 0 : 24,
+          right: isMobile ? 0 : "auto",
+          zIndex: 800,
+          width: isMobile ? "100%" : 400,
+          height: isMobile ? "75vh" : 560,
+          background: T.paper, color: T.ink,
           border: `1px solid ${T.line2}`, fontFamily: FONT_BODY,
           boxShadow: "0 30px 70px rgba(0,0,0,0.22)",
           display: "flex", flexDirection: "column",
+          borderRadius: isMobile ? "16px 16px 0 0" : 0,
         }}>
           <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: T.cream }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -994,6 +1021,7 @@ function TrialPill({ daysLeft, isPro, onUpgrade }: { daysLeft: number; isPro: bo
 export default function ProductPage() {
   const { session } = useSupabaseAuth()
   const [, navigate] = useLocation()
+  const isMobile = useMobile()
 
   const [scenarios, setScenarios_] = useState<AtriumScenario[]>(() => {
     const s = loadScenarios()
@@ -1044,7 +1072,7 @@ export default function ProductPage() {
       {/* ── Top bar ── */}
       <div style={{
         height: 60, display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 24px", borderBottom: `1px solid ${T.line}`, background: T.paper,
+        padding: "0 16px", borderBottom: `1px solid ${T.line}`, background: T.paper,
         position: "sticky", top: 0, zIndex: 400, flexShrink: 0,
       }}>
         {/* Left: brand */}
@@ -1055,51 +1083,82 @@ export default function ProductPage() {
           <span style={{ fontFamily: F.display, fontSize: 20, letterSpacing: -0.3, fontWeight: 500 }}>Clarifin</span>
         </div>
 
-        {/* Center: tabs */}
-        <div style={{ display: "flex", gap: 0, alignItems: "center" }}>
-          {TABS.map(({ id, label }) => (
-            <div key={id} onClick={() => setTab(id)} style={{
-              padding: "0 16px", height: 60, display: "flex", alignItems: "center",
-              fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.16em",
-              cursor: "pointer", color: tab === id ? T.ink : T.mute,
-              borderBottom: tab === id ? `2px solid ${T.accent}` : "2px solid transparent",
-              transition: "color .2s",
-            }}>{label}</div>
-          ))}
-        </div>
+        {/* Center: tabs — desktop only */}
+        {!isMobile && (
+          <div style={{ display: "flex", gap: 0, alignItems: "center" }}>
+            {TABS.map(({ id, label }) => (
+              <div key={id} onClick={() => setTab(id)} style={{
+                padding: "0 16px", height: 60, display: "flex", alignItems: "center",
+                fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.16em",
+                cursor: "pointer", color: tab === id ? T.ink : T.mute,
+                borderBottom: tab === id ? `2px solid ${T.accent}` : "2px solid transparent",
+                transition: "color .2s",
+              }}>{label}</div>
+            ))}
+          </div>
+        )}
 
         {/* Right: trial pill + profile */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <TrialPill daysLeft={7} isPro={isPro} onUpgrade={() => setShowUpgrade(true)} />
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12 }}>
+          {!isMobile && <TrialPill daysLeft={7} isPro={isPro} onUpgrade={() => setShowUpgrade(true)} />}
+          {isMobile && !isPro && (
+            <div onClick={() => setShowUpgrade(true)} style={{
+              fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.14em",
+              padding: "5px 10px", background: T.ink, color: T.paper, cursor: "pointer",
+            }}>PRO↑</div>
+          )}
           <div onClick={() => setShowProfile(true)} style={{
-            display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "6px 10px",
+            display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+            padding: isMobile ? "4px 6px" : "6px 10px",
             border: `1px solid ${T.line}`,
           }}>
             <div style={{ width: 26, height: 26, borderRadius: "50%", background: T.ink, color: T.paper, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_MONO, fontSize: 10 }}>
               {userName.slice(0, 2).toUpperCase()}
             </div>
-            <span style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 15, color: T.ink }}>{userName}</span>
-            <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: T.mute }}>▾</span>
+            {!isMobile && <span style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 15, color: T.ink }}>{userName}</span>}
+            {!isMobile && <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: T.mute }}>▾</span>}
           </div>
         </div>
       </div>
 
+      {/* ── Mobile tab strip ── */}
+      {isMobile && (
+        <div style={{
+          display: "flex", overflowX: "auto", borderBottom: `1px solid ${T.line}`,
+          background: T.paper, flexShrink: 0, msOverflowStyle: "none", scrollbarWidth: "none",
+        }}>
+          {TABS.map(({ id, label }) => (
+            <div key={id} onClick={() => setTab(id)} style={{
+              padding: "0 14px", height: 40, display: "flex", alignItems: "center",
+              fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.14em",
+              cursor: "pointer", color: tab === id ? T.ink : T.mute,
+              borderBottom: tab === id ? `2px solid ${T.accent}` : "2px solid transparent",
+              whiteSpace: "nowrap", flexShrink: 0,
+            }}>{label}</div>
+          ))}
+        </div>
+      )}
+
       {/* ── Scenario selector bar ── */}
-      <div style={{ height: 44, display: "flex", alignItems: "center", gap: 0, padding: "0 24px", borderBottom: `1px solid ${T.line}`, background: T.cream, flexShrink: 0 }}>
-        <span style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.18em", color: T.mute, marginRight: 16 }}>SCENARIO</span>
+      <div style={{
+        height: 44, display: "flex", alignItems: "center", gap: 0,
+        padding: "0 16px", borderBottom: `1px solid ${T.line}`, background: T.cream,
+        flexShrink: 0, overflowX: "auto", msOverflowStyle: "none", scrollbarWidth: "none",
+      }}>
+        <span style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.18em", color: T.mute, marginRight: 12, flexShrink: 0 }}>SCENARIO</span>
         {scenarios.map((s, i) => (
           <div key={s.id} onClick={() => setActiveId(s.id)} style={{
-            padding: "0 14px", height: 44, display: "flex", alignItems: "center", gap: 8,
+            padding: "0 12px", height: 44, display: "flex", alignItems: "center", gap: 7,
             fontFamily: F.display, fontSize: 15, cursor: "pointer",
             color: s.id === activeId ? T.ink : T.ink2,
             borderBottom: s.id === activeId ? `2px solid ${SC_COLORS[i % SC_COLORS.length]}` : "2px solid transparent",
-            fontWeight: s.id === activeId ? 500 : 400,
+            fontWeight: s.id === activeId ? 500 : 400, flexShrink: 0,
           }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: SC_COLORS[i % SC_COLORS.length], flexShrink: 0 }} />
             {s.name}
           </div>
         ))}
-        <div onClick={() => { setTab("compare") }} style={{ padding: "0 14px", height: 44, display: "flex", alignItems: "center", fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.14em", color: T.mute, cursor: "pointer" }}>
+        <div onClick={() => { setTab("compare") }} style={{ padding: "0 12px", height: 44, display: "flex", alignItems: "center", fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.14em", color: T.mute, cursor: "pointer", flexShrink: 0 }}>
           + ADD
         </div>
       </div>
@@ -1115,8 +1174,8 @@ export default function ProductPage() {
         {tab === "share" && <ShareScreen intake={intake} curS={curS} result={result} />}
       </div>
 
-      {/* ── Footer ── */}
-      <div style={{ borderTop: `1px solid ${T.line}`, padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", background: T.paper, flexShrink: 0 }}>
+      {/* ── Footer — hidden on mobile ── */}
+      <div style={{ display: isMobile ? "none" : "flex", borderTop: `1px solid ${T.line}`, padding: "14px 24px", justifyContent: "space-between", alignItems: "center", background: T.paper, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <BrandMark size={14} />
           <span style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.18em", color: T.mute }}>CLARIFIN &nbsp;·&nbsp; A STUDY IN YOUR FINANCIAL FUTURE</span>

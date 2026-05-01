@@ -1,7 +1,18 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useLocation } from "wouter"
 import { supabase } from "@/lib/supabase"
 import { T, F, FONT_MONO, FONT_BODY } from "@/lib/atrium-engine"
+
+// ── Mobile hook ────────────────────────────────────────────────────────────────
+function useMobile() {
+  const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768)
+  useEffect(() => {
+    const h = () => setMobile(window.innerWidth < 768)
+    window.addEventListener("resize", h)
+    return () => window.removeEventListener("resize", h)
+  }, [])
+  return mobile
+}
 
 // ── Brand mark ────────────────────────────────────────────────────────────────
 function BrandMark({ size = 22 }: { size?: number }) {
@@ -270,6 +281,7 @@ function AuthField({ label, right, children }: { label: string; right?: React.Re
 // ── Main auth page ────────────────────────────────────────────────────────────
 export default function SignInPage() {
   const [, navigate] = useLocation()
+  const isMobile = useMobile()
   const [mode, setMode] = useState<"login" | "signup">("login")
   const [email, setEmail] = useState("")
   const [pw, setPw] = useState("")
@@ -325,10 +337,10 @@ export default function SignInPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: T.paper, fontFamily: FONT_BODY, display: "grid", gridTemplateColumns: "1.05fr 1fr" }}>
+    <div style={{ minHeight: "100vh", background: T.paper, fontFamily: FONT_BODY, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.05fr 1fr" }}>
 
-      {/* Left — editorial pitch */}
-      <div style={{ background: T.cream, padding: "48px 56px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: `1px solid ${T.line}` }}>
+      {/* Left — editorial pitch (hidden on mobile) */}
+      <div style={{ display: isMobile ? "none" : "flex", background: T.cream, padding: "48px 56px", flexDirection: "column", justifyContent: "space-between", borderRight: `1px solid ${T.line}` }}>
         {/* Top nav */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BrandMark size={24} />
@@ -365,8 +377,15 @@ export default function SignInPage() {
       </div>
 
       {/* Right — form */}
-      <div style={{ padding: "56px 56px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div style={{ padding: isMobile ? "40px 24px" : "56px 56px", display: "flex", flexDirection: "column", justifyContent: isMobile ? "flex-start" : "center" }}>
         <div style={{ maxWidth: 380, margin: "0 auto", width: "100%" }}>
+          {/* Mobile brand header */}
+          {isMobile && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
+              <BrandMark size={22} />
+              <span style={{ fontFamily: F.display, fontSize: 20, letterSpacing: -0.3, fontWeight: 500 }}>Clarifin</span>
+            </div>
+          )}
           {/* Mode header */}
           <div style={{ marginBottom: 26 }}>
             <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 8 }}>

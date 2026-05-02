@@ -337,10 +337,10 @@ export default function SignInPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: T.paper, fontFamily: FONT_BODY, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.05fr 1fr" }}>
+    <div className="cl-auth-grid" style={{ minHeight: "100vh", background: T.paper, fontFamily: FONT_BODY, display: "grid", gridTemplateColumns: "1.05fr 1fr" }}>
 
-      {/* Left — editorial pitch (hidden on mobile) */}
-      <div style={{ display: isMobile ? "none" : "flex", background: T.cream, padding: "48px 56px", flexDirection: "column", justifyContent: "space-between", borderRight: `1px solid ${T.line}` }}>
+      {/* Left — editorial pitch */}
+      <div className="cl-auth-left" style={{ display: "flex", background: T.cream, padding: "48px 56px", flexDirection: "column", justifyContent: "space-between", borderRight: `1px solid ${T.line}` }}>
         {/* Top nav */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BrandMark size={24} />
@@ -377,15 +377,13 @@ export default function SignInPage() {
       </div>
 
       {/* Right — form */}
-      <div style={{ padding: isMobile ? "40px 24px" : "56px 56px", display: "flex", flexDirection: "column", justifyContent: isMobile ? "flex-start" : "center" }}>
+      <div className="cl-auth-right" style={{ padding: "56px 56px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ maxWidth: 380, margin: "0 auto", width: "100%" }}>
-          {/* Mobile brand header */}
-          {isMobile && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
-              <BrandMark size={22} />
-              <span style={{ fontFamily: F.display, fontSize: 20, letterSpacing: -0.3, fontWeight: 500 }}>Clarifin</span>
-            </div>
-          )}
+          {/* Mobile brand header — CSS shows on mobile only */}
+          <div className="cl-mobile-brand" style={{ alignItems: "center", gap: 10, marginBottom: 32 }}>
+            <BrandMark size={22} />
+            <span style={{ fontFamily: F.display, fontSize: 20, letterSpacing: -0.3, fontWeight: 500 }}>Clarifin</span>
+          </div>
           {/* Mode header */}
           <div style={{ marginBottom: 26 }}>
             <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 8 }}>

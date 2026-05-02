@@ -189,10 +189,10 @@ export default function OnboardingPage() {
   const stepLabels = ["The Question", "The Numbers", "The Name"]
 
   return (
-    <div style={{ minHeight: "100vh", background: T.paper, fontFamily: FONT_BODY, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
+    <div className="cl-onboarding-grid" style={{ minHeight: "100vh", background: T.paper, fontFamily: FONT_BODY, display: "grid", gridTemplateColumns: "1fr 1fr" }}>
 
       {/* Left — form */}
-      <div style={{ padding: isMobile ? "32px 20px" : "48px 64px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: isMobile ? "none" : `1px solid ${T.line}` }}>
+      <div className="cl-onboarding-left" style={{ padding: "48px 64px", display: "flex", flexDirection: "column", justifyContent: "space-between", borderRight: `1px solid ${T.line}` }}>
         {/* Progress rail */}
         <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: isMobile ? 28 : 48 }}>
           {stepLabels.map((l, i) => (
@@ -230,7 +230,7 @@ export default function OnboardingPage() {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 32 }}>
             <div>
               <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 16 }}>STEP 1 OF 3</div>
-              <div style={{ fontFamily: F.display, fontSize: isMobile ? 40 : 64, lineHeight: 1, letterSpacing: -1.5, fontWeight: 400, marginBottom: 12 }}>
+              <div className="cl-hero-xl" style={{ fontFamily: F.display, fontSize: 64, lineHeight: 1, letterSpacing: -1.5, fontWeight: 400, marginBottom: 12 }}>
                 I'm thinking<br /> about…
               </div>
               <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 17, color: T.ink2, lineHeight: 1.5 }}>
@@ -261,7 +261,7 @@ export default function OnboardingPage() {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 24 }}>
             <div>
               <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 16 }}>STEP 2 OF 3</div>
-              <div style={{ fontFamily: F.display, fontSize: isMobile ? 36 : 52, lineHeight: 1, letterSpacing: -1.2, fontWeight: 400, marginBottom: 8 }}>
+              <div className="cl-head-md" style={{ fontFamily: F.display, fontSize: 52, lineHeight: 1, letterSpacing: -1.2, fontWeight: 400, marginBottom: 8 }}>
                 The numbers<br /> as they stand.
               </div>
               <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 15, color: T.ink2 }}>
@@ -284,7 +284,7 @@ export default function OnboardingPage() {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 32 }}>
             <div>
               <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 16 }}>STEP 3 OF 3</div>
-              <div style={{ fontFamily: F.display, fontSize: isMobile ? 36 : 52, lineHeight: 1, letterSpacing: -1.2, fontWeight: 400, marginBottom: 8 }}>
+              <div className="cl-head-md" style={{ fontFamily: F.display, fontSize: 52, lineHeight: 1, letterSpacing: -1.2, fontWeight: 400, marginBottom: 8 }}>
                 What should<br /> we call this study?
               </div>
               <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 15, color: T.ink2 }}>
@@ -340,8 +340,8 @@ export default function OnboardingPage() {
         <div ref={progressRef} />
       </div>
 
-      {/* Right — alternating plate / preview (hidden on mobile) */}
-      <div style={{ display: isMobile ? "none" : "grid", gridTemplateRows: "1fr 1fr", gap: 0, height: "100vh" }}>
+      {/* Right — alternating plate / preview */}
+      <div className="cl-hide-mobile" style={{ display: "grid", gridTemplateRows: "1fr 1fr", gap: 0, height: "100vh" }}>
         <div style={{ overflow: "hidden", borderBottom: `1px solid ${T.line}` }}>
           <SignupPlate step={step} />
         </div>

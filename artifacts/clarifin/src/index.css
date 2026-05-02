@@ -252,8 +252,20 @@
 }
 
 /* ── Clarifin mobile responsive ─────────────────────────────────── */
+
+/* Baseline: mobile-only elements are hidden everywhere (media queries reveal them) */
+.cl-mobile-tabs,
+.cl-upgrade-compact,
+.cl-mobile-brand { display: none; }
+
+/* Prevent any element from blowing out the viewport width */
+*, *::before, *::after { max-width: 100vw; box-sizing: border-box; }
+/* Exception: fixed/absolute positioned overlays can exceed 100vw */
+[style*="position: fixed"], [style*="position:fixed"],
+[style*="position: absolute"], [style*="position:absolute"] { max-width: none; }
+
 @media (max-width: 767px) {
-  body { overflow-x: hidden; }
+  html, body { overflow-x: hidden; max-width: 100vw; }
 
   /* Topbar: hide desktop centre tabs, trial pill, profile label */
   .cl-topbar-tabs   { display: none !important; }
@@ -261,9 +273,9 @@
   .cl-profile-label { display: none !important; }
 
   /* Mobile-only elements: show */
-  .cl-mobile-tabs      { display: flex !important; }
-  .cl-upgrade-compact  { display: block !important; }
-  .cl-mobile-brand     { display: flex !important; }
+  .cl-mobile-tabs     { display: flex !important; }
+  .cl-upgrade-compact { display: flex !important; }
+  .cl-mobile-brand    { display: flex !important; }
 
   /* Footer hidden */
   .cl-footer { display: none !important; }
@@ -285,26 +297,38 @@
   /* Overview 2-col → 1-col */
   .cl-overview-grid {
     grid-template-columns: 1fr !important;
-    padding: 24px 16px 48px !important;
-    gap: 32px !important;
+    padding: 20px 16px 48px !important;
+    gap: 28px !important;
   }
 
-  /* Stress / assumptions 3-col → 2-col */
-  .cl-grid-3col { grid-template-columns: 1fr 1fr !important; }
+  /* Stress / assumptions 3-col → 1-col on mobile */
+  .cl-grid-3col { grid-template-columns: 1fr !important; }
 
   /* Journal / share 2-col → 1-col */
   .cl-grid-2col { grid-template-columns: 1fr !important; }
 
   /* Key font overrides */
-  .cl-hero-xl  { font-size: 44px !important; letter-spacing: -1px !important; }
-  .cl-hero-lg  { font-size: 22px !important; }
-  .cl-head-lg  { font-size: 28px !important; }
-  .cl-head-md  { font-size: 32px !important; }
+  .cl-hero-xl  { font-size: 40px !important; letter-spacing: -1px !important; line-height: 1.05 !important; }
+  .cl-hero-lg  { font-size: 20px !important; }
+  .cl-head-lg  { font-size: 26px !important; }
+  .cl-head-md  { font-size: 28px !important; }
+
+  /* Assumption value numbers (large display figures) */
+  .cl-assume-val  { font-size: 28px !important; }
 
   /* Upgrade modal: 1-col, hide left feature list */
-  .cl-upgrade-modal { grid-template-columns: 1fr !important; }
+  .cl-upgrade-modal { grid-template-columns: 1fr !important; max-width: 100vw !important; }
   .cl-upgrade-left  { display: none !important; }
   .cl-upgrade-right { padding: 24px 20px !important; }
+
+  /* Chat trigger: move to right side, smaller */
+  .cl-chat-trigger {
+    left: auto !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+  }
 
   /* Chat widget: full-width bottom sheet */
   .cl-chat-widget {
@@ -319,9 +343,36 @@
   /* Scenario bar: scrollable */
   .cl-scenario-bar { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
   .cl-scenario-bar::-webkit-scrollbar { display: none; }
+
+  /* Overview left column: tighter gap */
+  .cl-overview-left { gap: 28px !important; }
+  .cl-overview-body { font-size: 15px !important; }
+  .cl-stats-row     { gap: 20px !important; }
+
+  /* Prevent SVG overflow */
+  svg { max-width: 100% !important; overflow: hidden; }
+
+  /* Stress test cards */
+  .cl-stress-card { min-height: auto !important; padding: 16px !important; }
+  .cl-stress-val  { font-size: 40px !important; }
+
+  /* Compare screen: single column */
+  .cl-compare-grid { grid-template-columns: 1fr !important; }
+
+  /* Events screen cards: single column */
+  .cl-events-grid { grid-template-columns: 1fr !important; }
+
+  /* Stress cards: hide description text to keep cards compact */
+  .cl-stress-desc { display: none !important; }
+
+  /* Journal: date column narrower */
+  .cl-journal-row { grid-template-columns: 60px 1fr !important; gap: 12px !important; }
+
+  /* Profile dropdown full-width on mobile */
+  .cl-profile-menu { width: calc(100vw - 32px) !important; right: 16px !important; left: 16px !important; top: 68px !important; }
 }
 
-/* Desktop: keep mobile-only elements hidden */
+/* Desktop: keep mobile-only elements hidden (belt-and-suspenders with baseline above) */
 @media (min-width: 768px) {
   .cl-mobile-tabs     { display: none !important; }
   .cl-upgrade-compact { display: none !important; }

@@ -85,10 +85,9 @@ function OverviewScreen({ intake, curS, result, setTab, scenarios, setActiveId }
   intake: Intake; curS: AtriumScenario; result: ReturnType<typeof simulateAtrium>;
   setTab: (t: string) => void; scenarios: AtriumScenario[]; setActiveId: (id: string) => void
 }) {
-  const isMobile = useMobile()
   return (
     <div className="cl-overview-grid" style={{ padding: "56px 56px 80px", display: "grid", gridTemplateColumns: "1fr 280px", gap: 56, maxWidth: 1500, margin: "0 auto" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 32 : 48 }}>
+      <div className="cl-overview-left" style={{ display: "flex", flexDirection: "column", gap: 48 }}>
         {/* Hero */}
         <div>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 16 }}>YOU ASKED</div>
@@ -98,12 +97,12 @@ function OverviewScreen({ intake, curS, result, setTab, scenarios, setActiveId }
           <div className="cl-hero-xl" style={{ fontFamily: F.display, fontSize: 80, lineHeight: 1, letterSpacing: -2, fontWeight: 400, color: result.ruinAge ? T.claret : T.ink, marginBottom: 18 }}>
             {result.ruinAge ? <>Tight, <em>but workable.</em></> : <>Yes, <em style={{ color: T.accent }}>it holds.</em></>}
           </div>
-          <div style={{ fontFamily: F.display, fontSize: isMobile ? 15 : 18, fontStyle: "italic", color: T.ink2, lineHeight: 1.5, maxWidth: 640 }}>
+          <div className="cl-overview-body" style={{ fontFamily: F.display, fontSize: 18, fontStyle: "italic", color: T.ink2, lineHeight: 1.5, maxWidth: 640 }}>
             {result.ruinAge
               ? `As drawn, the plan depletes at ${result.ruinAge}. The most leveraged moves are trimming retirement spend by ~8%, or pushing retire-age by two years.`
               : `The plan carries through to ${curS.endAge} with room. A gentle glide — your largest levers are save rate and spend, in that order.`}
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: isMobile ? 20 : 36, marginTop: 32, paddingTop: 24, borderTop: `1px solid ${T.line}` }}>
+          <div className="cl-stats-row" style={{ display: "flex", flexWrap: "wrap", gap: 36, marginTop: 32, paddingTop: 24, borderTop: `1px solid ${T.line}` }}>
             {[
               ["At retirement", fmtA(result.atRetire.nw, { short: true }), `age ${curS.retireAge}`],
               ["Peak", fmtA(result.peak.nw, { short: true }), `age ${result.peak.age}`],
@@ -221,7 +220,7 @@ function CompareScreen({ scenarios, setScenarios, activeId, setActiveId }: {
         </svg>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+      <div className="cl-compare-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
         {results.map(({ s, r }, i) => {
           const isActive = s.id === activeId
           return (
@@ -263,7 +262,6 @@ function CompareScreen({ scenarios, setScenarios, activeId, setActiveId }: {
 
 // ─── Stress screen ────────────────────────────────────────────────────────────
 function StressScreen({ curS }: { curS: AtriumScenario }) {
-  const isMobile = useMobile()
   const tests = [
     { k: "2008", label: "2008 replay", survival: 91, pct: -0.37, desc: "A 37% drawdown in year 3, recovering over 4 years." },
     { k: "lost", label: "Lost decade", survival: 68, pct: -0.02, desc: "Ten years of flat returns starting today." },
@@ -287,15 +285,15 @@ function StressScreen({ curS }: { curS: AtriumScenario }) {
 
       <div className="cl-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
         {tests.map((t) => (
-          <div key={t.k} style={{ padding: 24, border: `1px solid ${T.line}`, background: T.paper, display: "flex", flexDirection: "column", gap: 12, minHeight: 220 }}>
+          <div key={t.k} className="cl-stress-card" style={{ padding: 24, border: `1px solid ${T.line}`, background: T.paper, display: "flex", flexDirection: "column", gap: 12, minHeight: 220 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontFamily: F.display, fontSize: 22, fontWeight: 500 }}>{t.label}</span>
               <span style={{ fontFamily: FONT_MONO, fontSize: 10, color: T.mute, letterSpacing: "0.14em" }}>{(t.pct * 100).toFixed(0)}%</span>
             </div>
-            {!isMobile && <div style={{ fontSize: 13, color: T.ink2, lineHeight: 1.5, flex: 1 }}>{t.desc}</div>}
+            <div className="cl-stress-desc" style={{ fontSize: 13, color: T.ink2, lineHeight: 1.5, flex: 1 }}>{t.desc}</div>
             <div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <div style={{ fontFamily: F.display, fontSize: isMobile ? 36 : 54, fontWeight: 400, letterSpacing: -1, color: t.survival > 80 ? T.sage : t.survival > 60 ? T.accent : T.claret, lineHeight: 1 }}>{t.survival}%</div>
+                <div className="cl-stress-val" style={{ fontFamily: F.display, fontSize: 54, fontWeight: 400, letterSpacing: -1, color: t.survival > 80 ? T.sage : t.survival > 60 ? T.accent : T.claret, lineHeight: 1 }}>{t.survival}%</div>
                 <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: T.mute, letterSpacing: "0.14em" }}>SURVIVE</div>
               </div>
               <div style={{ height: 3, background: T.cream, marginTop: 8, position: "relative" }}>
@@ -320,7 +318,6 @@ function StressScreen({ curS }: { curS: AtriumScenario }) {
 function EventsScreen({ curS, setScenario }: {
   curS: AtriumScenario; setScenario: (patch: Partial<AtriumScenario>) => void
 }) {
-  const isMobile = useMobile()
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -371,7 +368,7 @@ function EventsScreen({ curS, setScenario }: {
         <div>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute, marginBottom: 6 }}>EVENTS</div>
           <div className="cl-head-lg" style={{ fontFamily: F.display, fontSize: 44, letterSpacing: -0.8 }}>A life, as <em style={{ color: T.accent }}>chapters</em>.</div>
-          <div style={{ fontSize: 13, color: T.ink2, marginTop: 8 }}>{isMobile ? "Tap a card to edit events." : "Drag the dots left or right to try what-ifs. Each event reshapes the curve."}</div>
+          <div className="cl-events-hint" style={{ fontSize: 13, color: T.ink2, marginTop: 8 }}>Drag the dots to try what-ifs. Each event reshapes the curve.</div>
         </div>
         <button onClick={addEvent} style={{ background: T.ink, color: T.paper, border: "none", padding: "12px 22px", fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.14em", cursor: "pointer" }}>+ ADD EVENT</button>
       </div>
@@ -408,7 +405,7 @@ function EventsScreen({ curS, setScenario }: {
         </svg>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+      <div className="cl-events-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
         {curS.events.map((e) => (
           <div key={e.id} style={{ padding: 18, border: `1px solid ${T.line}`, background: T.paper, display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -466,7 +463,7 @@ function AssumptionsScreen({ curS, setScenario }: {
           <div key={f.k} style={{ padding: 22, background: T.cream, border: `1px solid ${T.line}` }}>
             <div style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.16em", color: T.mute, marginBottom: 8 }}>{f.label.toUpperCase()}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 12 }}>
-              <div style={{ fontFamily: F.display, fontSize: isMobile ? 30 : 44, fontWeight: 400, letterSpacing: -0.8, color: T.ink, lineHeight: 1 }}>{f.val}</div>
+              <div className="cl-assume-val" style={{ fontFamily: F.display, fontSize: 44, fontWeight: 400, letterSpacing: -0.8, color: T.ink, lineHeight: 1 }}>{f.val}</div>
               <div style={{ fontFamily: FONT_MONO, fontSize: 10, color: T.mute, letterSpacing: "0.08em" }}>{f.unit}</div>
             </div>
             <input type="range" min={f.min} max={f.max} step={f.step} value={f.val} onChange={(e) => f.onChange(+e.target.value)} style={{ width: "100%", accentColor: T.ink }} />
@@ -501,7 +498,7 @@ function JournalScreen({ journal, setJournal }: { journal: JournalEntry[]; setJo
       <div>
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute, marginBottom: 6 }}>JOURNAL</div>
-          <div style={{ fontFamily: F.display, fontSize: isMobile ? 28 : 44, letterSpacing: -0.8 }}>Notes to <em style={{ color: T.accent }}>your future self.</em></div>
+          <div className="cl-head-lg" style={{ fontFamily: F.display, fontSize: 44, letterSpacing: -0.8 }}>Notes to <em style={{ color: T.accent }}>your future self.</em></div>
         </div>
         <div style={{ background: T.cream, border: `1px solid ${T.line}`, padding: 20, marginBottom: 24 }}>
           <textarea
@@ -515,7 +512,7 @@ function JournalScreen({ journal, setJournal }: { journal: JournalEntry[]; setJo
           </div>
         </div>
         {journal.map((e) => (
-          <div key={e.id} style={{ padding: "22px 0", borderBottom: `1px solid ${T.line}`, display: "grid", gridTemplateColumns: "80px 1fr", gap: 20 }}>
+          <div key={e.id} className="cl-journal-row" style={{ padding: "22px 0", borderBottom: `1px solid ${T.line}`, display: "grid", gridTemplateColumns: "80px 1fr", gap: 20 }}>
             <div style={{ fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.14em", color: T.mute, paddingTop: 3 }}>{e.date.toUpperCase()}</div>
             <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 18, lineHeight: 1.5, color: T.ink }}>{e.note}</div>
           </div>
@@ -564,7 +561,7 @@ function ShareScreen({ intake, curS, result }: {
       <div>
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute, marginBottom: 6 }}>SHARE</div>
-          <div style={{ fontFamily: F.display, fontSize: isMobile ? 28 : 44, letterSpacing: -0.8 }}>A study, <em style={{ color: T.accent }}>on paper.</em></div>
+          <div className="cl-head-lg" style={{ fontFamily: F.display, fontSize: 44, letterSpacing: -0.8 }}>A study, <em style={{ color: T.accent }}>on paper.</em></div>
           <div style={{ fontSize: 13, color: T.ink2, marginTop: 8, maxWidth: 440 }}>Your plan exports as a quiet, beautifully typeset summary. You can also copy a link that encodes everything.</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -812,7 +809,7 @@ function ClarifinChat({ intake, curS, result, isPro, onUpgrade }: {
   return (
     <>
       {!open && (
-        <div onClick={() => setOpen(true)} style={{
+        <div className="cl-chat-trigger" onClick={() => setOpen(true)} style={{
           position: "fixed", bottom: 24, left: 24, zIndex: 800,
           background: T.ink, color: T.paper, padding: "12px 18px",
           display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
@@ -935,7 +932,7 @@ function ProfileMenu({ name, email, onClose, onSignOut }: {
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 500 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
+      <div onClick={(e) => e.stopPropagation()} className="cl-profile-menu" style={{
         position: "absolute", top: 60, right: 16,
         width: 280, background: T.paper, border: `1px solid ${T.line2}`,
         boxShadow: "0 20px 50px rgba(0,0,0,0.18)", zIndex: 501,

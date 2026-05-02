@@ -258,11 +258,8 @@
 .cl-upgrade-compact,
 .cl-mobile-brand { display: none; }
 
-/* Prevent any element from blowing out the viewport width */
-*, *::before, *::after { max-width: 100vw; box-sizing: border-box; }
-/* Exception: fixed/absolute positioned overlays can exceed 100vw */
-[style*="position: fixed"], [style*="position:fixed"],
-[style*="position: absolute"], [style*="position:absolute"] { max-width: none; }
+/* Ensure box-sizing is consistent everywhere */
+*, *::before, *::after { box-sizing: border-box; }
 
 @media (max-width: 767px) {
   html, body { overflow-x: hidden; max-width: 100vw; }
@@ -283,9 +280,12 @@
   /* Generic hide */
   .cl-hide-mobile { display: none !important; }
 
-  /* Auth (sign-in) */
+  /* Auth (sign-in): hide editorial panel, show only the form */
   .cl-auth-grid  { grid-template-columns: 1fr !important; }
+  .cl-auth-left  { display: none !important; }
   .cl-auth-right { padding: 40px 24px !important; }
+  /* OAuth provider modal: fit phone screen */
+  .cl-provider-sheet { width: min(420px, calc(100vw - 32px)) !important; }
 
   /* Onboarding */
   .cl-onboarding-grid { grid-template-columns: 1fr !important; }

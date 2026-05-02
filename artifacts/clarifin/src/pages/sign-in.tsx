@@ -84,7 +84,7 @@ function ProviderSheet({ provider, onClose, onAuthed }: {
       position: "fixed", inset: 0, background: "rgba(20,18,16,0.5)", backdropFilter: "blur(3px)",
       zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
     }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
+      <div onClick={(e) => e.stopPropagation()} className="cl-provider-sheet" style={{
         width: 420, background: brandBg, color: brandInk, borderRadius: 12,
         boxShadow: "0 20px 60px rgba(0,0,0,0.35)", overflow: "hidden",
         fontFamily: isGoogle ? '"Google Sans",Roboto,system-ui,sans-serif' : '"SF Pro Display",-apple-system,system-ui,sans-serif',

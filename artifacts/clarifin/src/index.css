@@ -256,7 +256,8 @@
 /* Baseline: mobile-only elements are hidden everywhere (media queries reveal them) */
 .cl-mobile-tabs,
 .cl-upgrade-compact,
-.cl-mobile-brand { display: none; }
+.cl-mobile-brand,
+.cl-landing-nav-brand { display: none; }
 
 /* Ensure box-sizing is consistent everywhere */
 *, *::before, *::after { box-sizing: border-box; }
@@ -372,8 +373,51 @@
   .cl-profile-menu { width: calc(100vw - 32px) !important; right: 16px !important; left: 16px !important; top: 68px !important; }
 }
 
+  /* ── Landing page ── */
+  /* Hide the 92px vertical rail — becomes horizontal top-bar area via nav */
+  .cl-landing-root   { grid-template-columns: 1fr !important; }
+  .cl-landing-rail   { display: none !important; }
+
+  /* Nav: stack vertically, reduce padding */
+  .cl-landing-nav    { padding: 16px 20px !important; flex-wrap: wrap !important; gap: 12px !important; }
+  .cl-landing-nav-links { display: none !important; }
+  .cl-landing-issue  { display: none !important; }
+  .cl-landing-signin { display: none !important; }
+
+  /* Hero: single column, much smaller font */
+  .cl-landing-hero       { grid-template-columns: 1fr !important; min-height: auto !important; }
+  .cl-landing-hero-left  { padding: 40px 24px 40px !important; border-right: none !important; }
+  .cl-landing-hero-right { display: none !important; }
+  .cl-landing-wif        { font-size: 72px !important; letter-spacing: -2px !important; line-height: 0.95 !important; }
+  .cl-landing-tagline    { font-size: 20px !important; margin-top: 20px !important; }
+  .cl-landing-body-text  { font-size: 14px !important; }
+  .cl-landing-cta-row    { margin-top: 32px !important; }
+
+  /* Sections: reduce padding */
+  .cl-landing-section { padding: 56px 24px !important; }
+
+  /* Question cards: single column */
+  .cl-landing-q-grid { grid-template-columns: 1fr !important; }
+  .cl-landing-head-lg { font-size: 32px !important; letter-spacing: -0.5px !important; margin-bottom: 32px !important; }
+
+  /* Method steps: single column */
+  .cl-landing-method-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+
+  /* Quote: single column */
+  .cl-landing-quote-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+
+  /* CTA band: stack vertically */
+  .cl-landing-cta-band { flex-direction: column !important; align-items: flex-start !important; padding: 56px 24px !important; gap: 28px !important; }
+  .cl-landing-cta-head { font-size: 36px !important; letter-spacing: -0.5px !important; }
+
+  /* Footer: stack vertically */
+  .cl-landing-footer { flex-direction: column !important; gap: 10px !important; padding: 28px 24px !important; }
+}
+
 /* Desktop: keep mobile-only elements hidden (belt-and-suspenders with baseline above) */
 @media (min-width: 768px) {
+  /* Landing nav brand shown only on mobile */
+  .cl-landing-nav-brand { display: none !important; }
   .cl-mobile-tabs     { display: none !important; }
   .cl-upgrade-compact { display: none !important; }
   .cl-mobile-brand    { display: none !important; }

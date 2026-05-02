@@ -121,12 +121,12 @@ export default function LandingPage() {
   useReveal(rootRef);
 
   return (
-    <div ref={rootRef} style={{
+    <div ref={rootRef} className="cl-landing-root" style={{
       minHeight: "100vh", background: T.paper, color: T.ink,
       fontFamily: BODY, display: "grid", gridTemplateColumns: "92px 1fr",
     }}>
-      {/* Vertical rail */}
-      <div style={{
+      {/* Vertical rail — hidden on mobile */}
+      <div className="cl-landing-rail" style={{
         borderRight: `1px solid ${T.line}`,
         display: "flex", flexDirection: "column", alignItems: "center",
         padding: "32px 0", justifyContent: "space-between",
@@ -149,21 +149,26 @@ export default function LandingPage() {
 
       <div>
         {/* Nav */}
-        <div data-reveal style={{
+        <div data-reveal className="cl-landing-nav" style={{
           display: "flex", justifyContent: "space-between", alignItems: "center",
           padding: "22px 48px", borderBottom: `1px solid ${T.line}`,
         }}>
-          <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute }}>
+          {/* Mobile brand (hidden on desktop) */}
+          <div className="cl-landing-nav-brand" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <BrandMark size={22} />
+            <span style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 500, letterSpacing: -0.2 }}>Clarifin</span>
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.2em", color: T.mute }} className="cl-landing-issue">
             ISSUE № 04 · APRIL 2026
           </div>
-          <div style={{ display: "flex", gap: 34, fontSize: 13.5, color: T.ink2 }}>
+          <div className="cl-landing-nav-links" style={{ display: "flex", gap: 34, fontSize: 13.5, color: T.ink2 }}>
             {["The Studio", "The Method", "Examples", "Journal"].map((x) => (
               <span key={x} style={{ cursor: "pointer" }}>{x}</span>
             ))}
           </div>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <a href="/sign-in" style={{ fontSize: 13, color: T.ink2, textDecoration: "none" }}>Sign in</a>
-            <a href="/sign-up" style={{ textDecoration: "none" }}>
+            <a href="/sign-in" className="cl-landing-signin" style={{ fontSize: 13, color: T.ink2, textDecoration: "none" }}>Sign in</a>
+            <a href="/sign-in" style={{ textDecoration: "none" }}>
               <button style={{
                 background: T.ink, color: T.paper, border: "none", padding: "10px 22px",
                 fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", cursor: "pointer",
@@ -174,9 +179,9 @@ export default function LandingPage() {
         </div>
 
         {/* Hero */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1fr", minHeight: 720 }}>
+        <div className="cl-landing-hero" style={{ display: "grid", gridTemplateColumns: "1.05fr 1fr", minHeight: 720 }}>
           {/* Left hero */}
-          <div style={{
+          <div className="cl-landing-hero-left" style={{
             padding: "80px 56px 60px",
             display: "flex", flexDirection: "column", justifyContent: "space-between",
             borderRight: `1px solid ${T.line}`,
@@ -189,13 +194,13 @@ export default function LandingPage() {
                 <span style={{ display: "inline-block", width: 24, height: 1, background: T.accent }} />
                 ON THINKING IN DECADES
               </div>
-              <div data-reveal style={{
+              <div data-reveal className="cl-landing-wif" style={{
                 fontFamily: SERIF, fontSize: 140, lineHeight: 0.92, letterSpacing: -4,
                 fontWeight: 400, color: T.ink,
               }}>
                 What<br /><em style={{ color: T.accent }}>if.</em>
               </div>
-              <div data-reveal style={{
+              <div data-reveal className="cl-landing-tagline" style={{
                 fontFamily: SERIF, fontSize: 28, fontStyle: "italic",
                 color: T.ink2, marginTop: 32, maxWidth: 500, lineHeight: 1.3,
               }}>
@@ -204,30 +209,24 @@ export default function LandingPage() {
               <div data-reveal style={{
                 maxWidth: 480, marginTop: 28, fontSize: 15, lineHeight: 1.65, color: T.ink2,
                 fontFamily: BODY,
-              }}>
+              }} className="cl-landing-body-text">
                 Clarifin is a simulator for the big what-ifs — the move, the baby, the business,
                 the sabbatical, the exit. See them play out, in real dollars, before you commit a single one.
               </div>
             </div>
-            <div data-reveal style={{ display: "flex", gap: 22, alignItems: "center", marginTop: 48 }}>
-              <a href="/sign-up" style={{ textDecoration: "none" }}>
+            <div data-reveal style={{ display: "flex", gap: 22, alignItems: "center", marginTop: 48 }} className="cl-landing-cta-row">
+              <a href="/sign-in" style={{ textDecoration: "none" }}>
                 <button style={{
                   background: T.ink, color: T.paper, border: "none", padding: "17px 34px",
                   fontFamily: MONO, fontSize: 11.5, letterSpacing: "0.18em", cursor: "pointer",
                   fontWeight: 500, borderRadius: 0,
                 }}>RUN MY NUMBERS →</button>
               </a>
-              <div style={{ fontSize: 12.5, color: T.mute }}>
-                or{" "}
-                <span style={{ textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer" }}>
-                  a 90-second tour ↗
-                </span>
-              </div>
             </div>
           </div>
 
-          {/* Right hero panel */}
-          <div data-reveal style={{
+          {/* Right hero panel — hidden on mobile */}
+          <div data-reveal className="cl-landing-hero-right" style={{
             padding: "56px 48px", background: T.cream, position: "relative",
             overflow: "hidden", display: "flex", flexDirection: "column",
           }}>
@@ -265,21 +264,21 @@ export default function LandingPage() {
         </div>
 
         {/* Section II: Questions */}
-        <div style={{ padding: "100px 56px", borderTop: `1px solid ${T.line}` }}>
+        <div className="cl-landing-section" style={{ padding: "100px 56px", borderTop: `1px solid ${T.line}` }}>
           <div data-reveal style={{
             fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.22em",
             color: T.accent, marginBottom: 18,
           }}>
             II. THE QUESTIONS PEOPLE BRING
           </div>
-          <div data-reveal style={{
+          <div data-reveal className="cl-landing-head-lg" style={{
             fontFamily: SERIF, fontSize: 60, lineHeight: 1.05, letterSpacing: -1.5,
             fontWeight: 400, maxWidth: 960, marginBottom: 52,
           }}>
             Most of them start with <em style={{ color: T.accent }}>"can we afford…"</em><br />
             and end with a feeling. We turn them into numbers.
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0 }}>
+          <div className="cl-landing-q-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0 }}>
             {[
               ['"Can I take a year off without derailing retirement?"', "Sabbatical", "14 months"],
               ['"Can we afford a second home in Portugal?"', "Second home", "+$420k"],
@@ -319,20 +318,20 @@ export default function LandingPage() {
         </div>
 
         {/* Section III: Method */}
-        <div style={{ padding: "100px 56px", background: T.cream, borderTop: `1px solid ${T.line}` }}>
+        <div className="cl-landing-section" style={{ padding: "100px 56px", background: T.cream, borderTop: `1px solid ${T.line}` }}>
           <div data-reveal style={{
             fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.22em",
             color: T.accent, marginBottom: 18,
           }}>
             III. THE METHOD
           </div>
-          <div data-reveal style={{
+          <div data-reveal className="cl-landing-head-lg" style={{
             fontFamily: SERIF, fontSize: 52, lineHeight: 1.05, letterSpacing: -1.2,
             fontWeight: 400, maxWidth: 860, marginBottom: 60,
           }}>
             Three small moves,<br />in sequence, every time.
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 40 }}>
+          <div className="cl-landing-method-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 40 }}>
             {[
               ["i.", "Sketch", "Tell us who you are. Rough is fine — five numbers, two minutes."],
               ["ii.", "Ask", "Describe the thing you are considering. A year off, a move, an exit."],
@@ -351,8 +350,8 @@ export default function LandingPage() {
         </div>
 
         {/* Editorial quote */}
-        <div style={{ padding: "100px 56px", borderTop: `1px solid ${T.line}` }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 80, alignItems: "center" }}>
+        <div className="cl-landing-section" style={{ padding: "100px 56px", borderTop: `1px solid ${T.line}` }}>
+          <div className="cl-landing-quote-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 80, alignItems: "center" }}>
             <div data-reveal>
               <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.22em", color: T.accent, marginBottom: 18 }}>
                 A LETTER FROM THE STUDIO
@@ -368,7 +367,7 @@ export default function LandingPage() {
                 — E. HALVERSON, FOUNDER
               </div>
             </div>
-            <div data-reveal style={{
+            <div data-reveal className="cl-hide-mobile" style={{
               aspectRatio: "4/3",
               background: `repeating-linear-gradient(135deg, ${T.cream}, ${T.cream} 10px, ${T.paper} 10px, ${T.paper} 20px)`,
               border: `1px solid ${T.line2}`,
@@ -392,21 +391,21 @@ export default function LandingPage() {
         </div>
 
         {/* CTA band */}
-        <div style={{
+        <div className="cl-landing-cta-band" style={{
           padding: "80px 56px", background: T.ink, color: T.paper,
-          display: "flex", justifyContent: "space-between", alignItems: "center",
+          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 32,
         }}>
           <div>
             <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.22em", color: T.mute, marginBottom: 12 }}>
               START ANYWHERE
             </div>
-            <div style={{
+            <div className="cl-landing-cta-head" style={{
               fontFamily: SERIF, fontSize: 60, lineHeight: 1, letterSpacing: -1.5, fontWeight: 400,
             }}>
               What would you<br /><em style={{ color: T.mute }}>rehearse</em> first?
             </div>
           </div>
-          <a href="/sign-up" style={{ textDecoration: "none" }}>
+          <a href="/sign-in" style={{ textDecoration: "none", flexShrink: 0 }}>
             <button style={{
               background: T.paper, color: T.ink, border: "none", padding: "22px 40px",
               fontFamily: MONO, fontSize: 12, letterSpacing: "0.18em", cursor: "pointer",
@@ -416,7 +415,7 @@ export default function LandingPage() {
         </div>
 
         {/* Footer */}
-        <div style={{
+        <div className="cl-landing-footer" style={{
           padding: "36px 56px", background: T.paper, color: T.mute,
           fontFamily: MONO, fontSize: 10, letterSpacing: "0.15em",
           display: "flex", justifyContent: "space-between",

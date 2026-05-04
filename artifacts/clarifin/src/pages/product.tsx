@@ -810,7 +810,7 @@ function ClarifinChat({ intake, curS, result, isPro, onUpgrade }: {
     <>
       {!open && (
         <div className="cl-chat-trigger" onClick={() => setOpen(true)} style={{
-          position: "fixed", bottom: 24, left: 24, zIndex: 800,
+          position: "fixed", bottom: 24, right: 24, zIndex: 800,
           background: T.ink, color: T.paper, padding: "12px 18px",
           display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
           boxShadow: "0 12px 30px rgba(0,0,0,0.18)", fontFamily: FONT_BODY, fontSize: 13,
@@ -826,7 +826,7 @@ function ClarifinChat({ intake, curS, result, isPro, onUpgrade }: {
 
       {open && (
         <div className="cl-chat-widget" style={{
-          position: "fixed", bottom: 24, left: 24, zIndex: 800,
+          position: "fixed", bottom: 24, right: 24, zIndex: 800,
           width: 400, height: 560,
           background: T.paper, color: T.ink,
           border: `1px solid ${T.line2}`, fontFamily: FONT_BODY,

@@ -322,9 +322,8 @@
   .cl-upgrade-left  { display: none !important; }
   .cl-upgrade-right { padding: 24px 20px !important; }
 
-  /* Chat trigger: move to right side, smaller */
+  /* Chat trigger: tighten on mobile */
   .cl-chat-trigger {
-    left: auto !important;
     right: 16px !important;
     bottom: 16px !important;
     padding: 10px 14px !important;

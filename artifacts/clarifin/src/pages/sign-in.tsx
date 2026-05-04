@@ -5,9 +5,9 @@ import { T, F, FONT_MONO, FONT_BODY } from "@/lib/atrium-engine"
 
 // ── Mobile hook ────────────────────────────────────────────────────────────────
 function useMobile() {
-  const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768)
+  const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024)
   useEffect(() => {
-    const h = () => setMobile(window.innerWidth < 768)
+    const h = () => setMobile(window.innerWidth < 1024)
     window.addEventListener("resize", h)
     return () => window.removeEventListener("resize", h)
   }, [])
@@ -281,14 +281,13 @@ function AuthField({ label, right, children }: { label: string; right?: React.Re
 // ── Main auth page ────────────────────────────────────────────────────────────
 export default function SignInPage() {
   const [, navigate] = useLocation()
-  const isMobile = useMobile()
   const [mode, setMode] = useState<"login" | "signup">("login")
   const [email, setEmail] = useState("")
   const [pw, setPw] = useState("")
   const [pw2, setPw2] = useState("")
   const [err, setErr] = useState("")
   const [busy, setBusy] = useState(false)
-  const [providerSheet, setProviderSheet] = useState<"google" | "apple" | null>(null)
+  const [confirmSent, setConfirmSent] = useState(false)
   const [forgot, setForgot] = useState(false)
 
   const socialBtnStyle: React.CSSProperties = {
@@ -314,12 +313,27 @@ export default function SignInPage() {
     setBusy(true)
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({ email, password: pw })
+        const { data, error } = await supabase.auth.signUp({ email, password: pw })
         if (error) throw error
-        navigate("/app/onboarding")
+        // Supabase requires email confirmation by default.
+        // If no session came back, confirmation email was sent — tell the user.
+        if (!data.session) {
+          setConfirmSent(true)
+        } else {
+          navigate("/app/onboarding")
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pw })
-        if (error) throw error
+        if (error) {
+          // Give a friendlier message for the most common case
+          if (error.message.toLowerCase().includes("invalid login credentials")) {
+            throw new Error("Incorrect email or password.")
+          }
+          if (error.message.toLowerCase().includes("email not confirmed")) {
+            throw new Error("Please confirm your email first — check your inbox.")
+          }
+          throw error
+        }
         navigate("/app")
       }
     } catch (err: unknown) {
@@ -329,11 +343,20 @@ export default function SignInPage() {
     }
   }
 
-  const handleOAuthSuccess = (_name: string) => {
-    setProviderSheet(null)
-    // In production: supabase.auth.signInWithOAuth({ provider: ... })
-    // For now navigate to app after simulated OAuth
-    navigate("/app")
+  const handleOAuth = async (provider: "google" | "apple") => {
+    setErr("")
+    setBusy(true)
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}/app` },
+      })
+      if (error) throw error
+      // Browser will redirect — no further action needed
+    } catch (err: unknown) {
+      setErr(err instanceof Error ? err.message : "OAuth sign-in failed.")
+      setBusy(false)
+    }
   }
 
   return (
@@ -384,6 +407,31 @@ export default function SignInPage() {
             <BrandMark size={22} />
             <span style={{ fontFamily: F.display, fontSize: 20, letterSpacing: -0.3, fontWeight: 500 }}>Clarifin</span>
           </div>
+
+          {/* ── Email confirmation sent screen ── */}
+          {confirmSent ? (
+            <div>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 12 }}>CHECK YOUR INBOX</div>
+              <div style={{ fontFamily: F.display, fontSize: 34, lineHeight: 1, letterSpacing: -0.6, marginBottom: 16 }}>
+                One more step — <em style={{ color: T.accent }}>confirm</em> your email.
+              </div>
+              <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 15, color: T.ink2, lineHeight: 1.55, marginBottom: 28 }}>
+                We sent a confirmation link to <span style={{ color: T.ink, fontStyle: "normal" }}>{email}</span>. Click it to activate your account, then come back here to log in.
+              </div>
+              <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: 20, fontSize: 13, color: T.ink2, lineHeight: 1.6, marginBottom: 22 }}>
+                No email? Check your spam folder, or{" "}
+                <span onClick={() => { setConfirmSent(false); setMode("signup") }} style={{ color: T.accent, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  try again
+                </span>.
+              </div>
+              <button onClick={() => { setConfirmSent(false); setMode("login") }} style={{
+                background: T.ink, color: T.paper, border: "none", padding: "14px 22px", width: "100%",
+                fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.18em", cursor: "pointer", fontWeight: 500,
+              }}>
+                BACK TO LOG IN →
+              </button>
+            </div>
+          ) : (<>
           {/* Mode header */}
           <div style={{ marginBottom: 26 }}>
             <div style={{ fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.22em", color: T.mute, marginBottom: 8 }}>
@@ -410,13 +458,13 @@ export default function SignInPage() {
 
           {/* Social */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
-            <button type="button" disabled={busy} onClick={() => setProviderSheet("google")} style={socialBtnStyle}
+            <button type="button" disabled={busy} onClick={() => handleOAuth("google")} style={socialBtnStyle}
               onMouseEnter={(e) => { if (!busy) e.currentTarget.style.borderColor = T.ink }}
               onMouseLeave={(e) => { if (!busy) e.currentTarget.style.borderColor = T.line2 }}>
               <GoogleG />
               <span style={{ fontFamily: F.display, fontSize: 14 }}>Google</span>
             </button>
-            <button type="button" disabled={busy} onClick={() => setProviderSheet("apple")} style={socialBtnStyle}
+            <button type="button" disabled={busy} onClick={() => handleOAuth("apple")} style={socialBtnStyle}
               onMouseEnter={(e) => { if (!busy) e.currentTarget.style.borderColor = T.ink }}
               onMouseLeave={(e) => { if (!busy) e.currentTarget.style.borderColor = T.line2 }}>
               <AppleLogo color={T.ink} />
@@ -493,13 +541,9 @@ export default function SignInPage() {
               <span style={{ color: T.ink2, borderBottom: `1px solid ${T.line2}`, cursor: "pointer", paddingBottom: 1 }}>Privacy Policy</span>.
             </div>
           </form>
+          </>)}
         </div>
       </div>
-
-      {/* Provider sheet modals */}
-      {providerSheet && (
-        <ProviderSheet provider={providerSheet} onClose={() => setProviderSheet(null)} onAuthed={handleOAuthSuccess} />
-      )}
 
       {/* Forgot password modal */}
       {forgot && (

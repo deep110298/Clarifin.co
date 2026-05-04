@@ -921,7 +921,7 @@ function ClarifinChat({ intake, curS, result, isPro, onUpgrade }: {
 }
 
 // ─── Family member storage ────────────────────────────────────────────────────
-interface FamilyMember { id: string; name: string; relation: string }
+interface FamilyMember { id: string; name: string; relation: string; email?: string; inviteStatus?: "pending" | "sent" }
 
 function loadFamily(): FamilyMember[] {
   try { return JSON.parse(localStorage.getItem("clarifin_family") || "[]") } catch { return [] }
@@ -929,25 +929,67 @@ function loadFamily(): FamilyMember[] {
 function saveFamily(m: FamilyMember[]) {
   try { localStorage.setItem("clarifin_family", JSON.stringify(m)) } catch { /* ignore */ }
 }
+function loadActiveProfileId(): string | null {
+  try { return localStorage.getItem("clarifin_active_profile") } catch { return null }
+}
+function saveActiveProfileId(id: string | null) {
+  try {
+    if (id) localStorage.setItem("clarifin_active_profile", id)
+    else localStorage.removeItem("clarifin_active_profile")
+  } catch { /* ignore */ }
+}
 
 // ─── Profile menu ─────────────────────────────────────────────────────────────
-function ProfileMenu({ name, email, onClose, onSignOut }: {
-  name: string; email: string; onClose: () => void; onSignOut: () => void
+function ProfileMenu({ name, email, activeProfileId, onSwitchProfile, onClose, onSignOut }: {
+  name: string; email: string
+  activeProfileId: string | null
+  onSwitchProfile: (id: string | null) => void
+  onClose: () => void; onSignOut: () => void
 }) {
   const [, navigate] = useLocation()
   const [members, setMembers] = useState<FamilyMember[]>(loadFamily)
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState("")
   const [newRelation, setNewRelation] = useState("Partner")
+  const [newEmail, setNewEmail] = useState("")
+  const [inviting, setInviting] = useState(false)
 
-  const addMember = () => {
+  const addMember = async () => {
     if (!newName.trim()) return
-    const m: FamilyMember = { id: Date.now().toString(), name: newName.trim(), relation: newRelation }
+    const m: FamilyMember = {
+      id: Date.now().toString(),
+      name: newName.trim(),
+      relation: newRelation,
+      email: newEmail.trim() || undefined,
+      inviteStatus: newEmail.trim() ? "pending" : undefined,
+    }
     const updated = [...members, m]
     setMembers(updated)
     saveFamily(updated)
+
+    // Send invite email if provided
+    if (newEmail.trim()) {
+      setInviting(true)
+      try {
+        const { customFetch } = await import("@workspace/api-client-react")
+        await customFetch("/api/family/invite", {
+          method: "POST",
+          body: JSON.stringify({ email: newEmail.trim(), inviterName: name }),
+        })
+        // Mark as sent
+        const withSent = updated.map(x => x.id === m.id ? { ...x, inviteStatus: "sent" as const } : x)
+        setMembers(withSent)
+        saveFamily(withSent)
+      } catch {
+        // Invite failed silently — still show member as pending
+      } finally {
+        setInviting(false)
+      }
+    }
+
     setNewName("")
     setNewRelation("Partner")
+    setNewEmail("")
     setAdding(false)
   }
 
@@ -955,16 +997,22 @@ function ProfileMenu({ name, email, onClose, onSignOut }: {
     const updated = members.filter(m => m.id !== id)
     setMembers(updated)
     saveFamily(updated)
+    // If we were viewing this member, switch back to primary
+    if (activeProfileId === id) onSwitchProfile(null)
   }
 
   const initials = (n: string) => n.split(" ").map(p => p[0]).join("").toUpperCase().slice(0, 2) || "??"
+
+  const isPrimary = !activeProfileId
+  const activeFamily = members.find(m => m.id === activeProfileId)
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 500 }}>
       <div onClick={(e) => e.stopPropagation()} className="cl-profile-menu" style={{
         position: "absolute", top: 60, right: 16,
-        width: 300, background: T.paper, border: `1px solid ${T.line2}`,
+        width: 320, background: T.paper, border: `1px solid ${T.line2}`,
         boxShadow: "0 20px 50px rgba(0,0,0,0.18)", zIndex: 501,
+        maxHeight: "calc(100vh - 80px)", overflowY: "auto",
       }}>
         {/* Header */}
         <div style={{ background: T.cream, padding: "18px 20px", borderBottom: `1px solid ${T.line}` }}>
@@ -973,14 +1021,28 @@ function ProfileMenu({ name, email, onClose, onSignOut }: {
           <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 13, color: T.ink2 }}>{email}</div>
         </div>
 
-        {/* Actions */}
-        {[
-          { label: "Account settings", onClick: () => { onClose(); navigate("/app/account") } },
-        ].map(({ label, onClick }) => (
-          <div key={label} onClick={onClick} style={{ padding: "13px 20px", borderBottom: `1px solid ${T.line}`, fontFamily: FONT_BODY, fontSize: 14, color: T.ink, cursor: "pointer" }}>
-            {label}
+        {/* Viewing-as banner when a family member is active */}
+        {!isPrimary && activeFamily && (
+          <div style={{ background: T.accent, padding: "10px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.16em", color: T.paper }}>
+              VIEWING AS &nbsp;<strong>{activeFamily.name.toUpperCase()}</strong>
+            </div>
+            <div
+              onClick={() => { onSwitchProfile(null); onClose() }}
+              style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.14em", color: T.paper, cursor: "pointer", opacity: 0.8, textDecoration: "underline" }}
+            >
+              ← PRIMARY
+            </div>
           </div>
-        ))}
+        )}
+
+        {/* Actions */}
+        <div
+          onClick={() => { onClose(); navigate("/app/account") }}
+          style={{ padding: "13px 20px", borderBottom: `1px solid ${T.line}`, fontFamily: FONT_BODY, fontSize: 14, color: T.ink, cursor: "pointer" }}
+        >
+          Account settings
+        </div>
 
         {/* Family members */}
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${T.line}` }}>
@@ -992,7 +1054,15 @@ function ProfileMenu({ name, email, onClose, onSignOut }: {
           </div>
 
           {/* You — always first */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <div
+            onClick={() => { onSwitchProfile(null); onClose() }}
+            style={{
+              display: "flex", alignItems: "center", gap: 10, marginBottom: 10,
+              padding: "8px", cursor: "pointer", borderRadius: 0,
+              background: isPrimary ? T.cream : "transparent",
+              border: isPrimary ? `1px solid ${T.line2}` : "1px solid transparent",
+            }}
+          >
             <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.ink, color: T.paper, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_MONO, fontSize: 10, flexShrink: 0 }}>
               {initials(name || "ME")}
             </div>
@@ -1000,21 +1070,51 @@ function ProfileMenu({ name, email, onClose, onSignOut }: {
               <div style={{ fontFamily: F.display, fontSize: 15, color: T.ink }}>{name || "You"}</div>
               <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 12, color: T.mute }}>Primary</div>
             </div>
+            {isPrimary && (
+              <div style={{ fontFamily: FONT_MONO, fontSize: 8, letterSpacing: "0.14em", color: T.accent }}>ACTIVE</div>
+            )}
           </div>
 
           {/* Added family members */}
-          {members.map((m) => (
-            <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.cream, border: `1px solid ${T.line2}`, color: T.ink, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_MONO, fontSize: 10, flexShrink: 0 }}>
-                {initials(m.name)}
+          {members.map((m) => {
+            const isActive = activeProfileId === m.id
+            return (
+              <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <div
+                  onClick={() => { onSwitchProfile(m.id); onClose() }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10, flex: 1,
+                    padding: "8px", cursor: "pointer",
+                    background: isActive ? T.cream : "transparent",
+                    border: isActive ? `1px solid ${T.line2}` : "1px solid transparent",
+                  }}
+                >
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: isActive ? T.ink : T.cream, border: `1px solid ${T.line2}`, color: isActive ? T.paper : T.ink, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_MONO, fontSize: 10, flexShrink: 0 }}>
+                    {initials(m.name)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: F.display, fontSize: 15, color: T.ink }}>{m.name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 12, color: T.mute }}>{m.relation}</span>
+                      {m.inviteStatus === "sent" && (
+                        <span style={{ fontFamily: FONT_MONO, fontSize: 8, letterSpacing: "0.12em", color: T.sage || "#5a7a5a", padding: "1px 5px", border: `1px solid ${T.sage || "#5a7a5a"}` }}>INVITED</span>
+                      )}
+                      {m.inviteStatus === "pending" && (
+                        <span style={{ fontFamily: FONT_MONO, fontSize: 8, letterSpacing: "0.12em", color: T.gold || "#a08020", padding: "1px 5px", border: `1px solid ${T.gold || "#a08020"}` }}>SENDING…</span>
+                      )}
+                    </div>
+                  </div>
+                  {isActive && (
+                    <div style={{ fontFamily: FONT_MONO, fontSize: 8, letterSpacing: "0.14em", color: T.accent, flexShrink: 0 }}>ACTIVE</div>
+                  )}
+                  {!isActive && (
+                    <div style={{ fontFamily: FONT_MONO, fontSize: 8, letterSpacing: "0.14em", color: T.mute, flexShrink: 0 }}>SWITCH</div>
+                  )}
+                </div>
+                <div onClick={() => removeMember(m.id)} style={{ fontFamily: FONT_MONO, fontSize: 11, color: T.mute, cursor: "pointer", padding: "4px 6px", flexShrink: 0 }}>×</div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: F.display, fontSize: 15, color: T.ink }}>{m.name}</div>
-                <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 12, color: T.mute }}>{m.relation}</div>
-              </div>
-              <div onClick={() => removeMember(m.id)} style={{ fontFamily: FONT_MONO, fontSize: 11, color: T.mute, cursor: "pointer", padding: "2px 6px" }}>×</div>
-            </div>
-          ))}
+            )
+          })}
 
           {/* Add form */}
           {adding && (
@@ -1023,7 +1123,6 @@ function ProfileMenu({ name, email, onClose, onSignOut }: {
                 autoFocus
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addMember()}
                 placeholder="Name"
                 style={{ width: "100%", boxSizing: "border-box", background: T.paper, border: `1px solid ${T.line2}`, color: T.ink, padding: "8px 10px", fontFamily: FONT_BODY, fontSize: 13, outline: "none", marginBottom: 8 }}
                 onFocus={(e) => (e.target.style.borderColor = T.ink)}
@@ -1032,15 +1131,27 @@ function ProfileMenu({ name, email, onClose, onSignOut }: {
               <select
                 value={newRelation}
                 onChange={(e) => setNewRelation(e.target.value)}
-                style={{ width: "100%", boxSizing: "border-box", background: T.paper, border: `1px solid ${T.line2}`, color: T.ink, padding: "8px 10px", fontFamily: FONT_BODY, fontSize: 13, outline: "none", marginBottom: 10, appearance: "none" }}
+                style={{ width: "100%", boxSizing: "border-box", background: T.paper, border: `1px solid ${T.line2}`, color: T.ink, padding: "8px 10px", fontFamily: FONT_BODY, fontSize: 13, outline: "none", marginBottom: 8, appearance: "none" }}
               >
                 {["Partner", "Spouse", "Child", "Parent", "Sibling", "Other"].map(r => (
                   <option key={r} value={r}>{r}</option>
                 ))}
               </select>
+              <input
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addMember()}
+                placeholder="Email to send invite (optional)"
+                type="email"
+                style={{ width: "100%", boxSizing: "border-box", background: T.paper, border: `1px solid ${T.line2}`, color: T.ink, padding: "8px 10px", fontFamily: FONT_BODY, fontSize: 13, outline: "none", marginBottom: 10 }}
+                onFocus={(e) => (e.target.style.borderColor = T.ink)}
+                onBlur={(e) => (e.target.style.borderColor = T.line2)}
+              />
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={addMember} style={{ flex: 2, background: T.ink, color: T.paper, border: "none", padding: "9px 0", fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.14em", cursor: "pointer" }}>ADD →</button>
-                <button onClick={() => { setAdding(false); setNewName(""); }} style={{ flex: 1, background: "none", border: `1px solid ${T.line2}`, color: T.mute, padding: "9px 0", fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.14em", cursor: "pointer" }}>CANCEL</button>
+                <button onClick={addMember} disabled={inviting} style={{ flex: 2, background: T.ink, color: T.paper, border: "none", padding: "9px 0", fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.14em", cursor: "pointer", opacity: inviting ? 0.6 : 1 }}>
+                  {inviting ? "SENDING…" : "ADD →"}
+                </button>
+                <button onClick={() => { setAdding(false); setNewName(""); setNewEmail("") }} style={{ flex: 1, background: "none", border: `1px solid ${T.line2}`, color: T.mute, padding: "9px 0", fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.14em", cursor: "pointer" }}>CANCEL</button>
               </div>
             </div>
           )}
@@ -1100,6 +1211,12 @@ export default function ProductPage() {
   const [showProfile, setShowProfile] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [isPro, setIsPro] = useState(false)
+  const [activeProfileId, setActiveProfileId_] = useState<string | null>(loadActiveProfileId)
+
+  const setActiveProfileId = (id: string | null) => {
+    setActiveProfileId_(id)
+    saveActiveProfileId(id)
+  }
 
   // Persist on change
   const setScenarios = (s: AtriumScenario[]) => { setScenarios_(s); saveScenarios(s) }
@@ -1113,7 +1230,9 @@ export default function ProductPage() {
   }
 
   const userEmail = session?.user?.email ?? ""
-  const userName = intake.name || userEmail.split("@")[0] || "Your study"
+  const primaryName = intake.name || userEmail.split("@")[0] || "Your study"
+  const activeFamilyMember = activeProfileId ? loadFamily().find(m => m.id === activeProfileId) : null
+  const userName = activeFamilyMember ? activeFamilyMember.name : primaryName
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -1172,12 +1291,19 @@ export default function ProductPage() {
           )}
           <div onClick={() => setShowProfile(true)} style={{
             display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
-            padding: "6px 10px", border: `1px solid ${T.line}`,
+            padding: "6px 10px",
+            border: activeFamilyMember ? `1px solid ${T.accent}` : `1px solid ${T.line}`,
+            background: activeFamilyMember ? T.cream : "transparent",
           }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: T.ink, color: T.paper, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_MONO, fontSize: 10 }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", background: activeFamilyMember ? T.cream : T.ink, border: activeFamilyMember ? `1.5px solid ${T.accent}` : "none", color: activeFamilyMember ? T.accent : T.paper, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_MONO, fontSize: 10 }}>
               {userName.slice(0, 2).toUpperCase()}
             </div>
-            <span className="cl-profile-label" style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 15, color: T.ink }}>{userName}</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <span className="cl-profile-label" style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 15, color: T.ink, lineHeight: 1 }}>{userName}</span>
+              {activeFamilyMember && (
+                <span style={{ fontFamily: FONT_MONO, fontSize: 8, letterSpacing: "0.14em", color: T.accent, lineHeight: 1 }}>VIEWING AS</span>
+              )}
+            </div>
             <span className="cl-profile-label" style={{ fontFamily: FONT_MONO, fontSize: 10, color: T.mute }}>▾</span>
           </div>
         </div>
@@ -1250,8 +1376,10 @@ export default function ProductPage() {
       {/* ── Profile dropdown ── */}
       {showProfile && (
         <ProfileMenu
-          name={userName}
+          name={primaryName}
           email={userEmail}
+          activeProfileId={activeProfileId}
+          onSwitchProfile={(id) => { setActiveProfileId(id); setShowProfile(false) }}
           onClose={() => setShowProfile(false)}
           onSignOut={handleSignOut}
         />

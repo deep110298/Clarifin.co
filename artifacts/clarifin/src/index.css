@@ -262,7 +262,7 @@
 /* Ensure box-sizing is consistent everywhere */
 *, *::before, *::after { box-sizing: border-box; }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   html, body { overflow-x: hidden; max-width: 100vw; }
 
   /* Topbar: hide desktop centre tabs, trial pill, profile label */
@@ -371,7 +371,6 @@
 
   /* Profile dropdown full-width on mobile */
   .cl-profile-menu { width: calc(100vw - 32px) !important; right: 16px !important; left: 16px !important; top: 68px !important; }
-}
 
   /* ── Landing page ── */
   /* Hide the 92px vertical rail — becomes horizontal top-bar area via nav */
@@ -383,6 +382,7 @@
   .cl-landing-nav-links { display: none !important; }
   .cl-landing-issue  { display: none !important; }
   .cl-landing-signin { display: none !important; }
+  .cl-landing-nav-brand { display: flex !important; }
 
   /* Hero: single column, much smaller font */
   .cl-landing-hero       { grid-template-columns: 1fr !important; min-height: auto !important; }
@@ -415,7 +415,7 @@
 }
 
 /* Desktop: keep mobile-only elements hidden (belt-and-suspenders with baseline above) */
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   /* Landing nav brand shown only on mobile */
   .cl-landing-nav-brand { display: none !important; }
   .cl-mobile-tabs     { display: none !important; }

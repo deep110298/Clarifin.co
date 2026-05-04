@@ -64,11 +64,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     };
   }, [dropdownOpen]);
 
-  useEffect(() => {
-    if (!profile.isComplete && location !== "/app/profile") {
-      navigate("/app/profile");
-    }
-  }, [profile.isComplete, location]);
+  // Removed old profile-completion redirect — onboarding is now handled
+  // by OnboardingPage via the Supabase/Atrium flow, not the legacy profile form.
+  void profile; void location;
 
   const handleUpgrade = async () => {
     setUpgrading(true);

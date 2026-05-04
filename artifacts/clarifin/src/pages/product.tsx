@@ -920,21 +920,50 @@ function ClarifinChat({ intake, curS, result, isPro, onUpgrade }: {
   )
 }
 
+// ─── Family member storage ────────────────────────────────────────────────────
+interface FamilyMember { id: string; name: string; relation: string }
+
+function loadFamily(): FamilyMember[] {
+  try { return JSON.parse(localStorage.getItem("clarifin_family") || "[]") } catch { return [] }
+}
+function saveFamily(m: FamilyMember[]) {
+  try { localStorage.setItem("clarifin_family", JSON.stringify(m)) } catch { /* ignore */ }
+}
+
 // ─── Profile menu ─────────────────────────────────────────────────────────────
 function ProfileMenu({ name, email, onClose, onSignOut }: {
   name: string; email: string; onClose: () => void; onSignOut: () => void
 }) {
   const [, navigate] = useLocation()
-  const familyMembers = [
-    { initials: name.slice(0, 2).toUpperCase() || "ME", label: "You", relation: "primary" },
-    { initials: "PA", label: "Partner", relation: "shared view" },
-  ]
+  const [members, setMembers] = useState<FamilyMember[]>(loadFamily)
+  const [adding, setAdding] = useState(false)
+  const [newName, setNewName] = useState("")
+  const [newRelation, setNewRelation] = useState("Partner")
+
+  const addMember = () => {
+    if (!newName.trim()) return
+    const m: FamilyMember = { id: Date.now().toString(), name: newName.trim(), relation: newRelation }
+    const updated = [...members, m]
+    setMembers(updated)
+    saveFamily(updated)
+    setNewName("")
+    setNewRelation("Partner")
+    setAdding(false)
+  }
+
+  const removeMember = (id: string) => {
+    const updated = members.filter(m => m.id !== id)
+    setMembers(updated)
+    saveFamily(updated)
+  }
+
+  const initials = (n: string) => n.split(" ").map(p => p[0]).join("").toUpperCase().slice(0, 2) || "??"
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 500 }}>
       <div onClick={(e) => e.stopPropagation()} className="cl-profile-menu" style={{
         position: "absolute", top: 60, right: 16,
-        width: 280, background: T.paper, border: `1px solid ${T.line2}`,
+        width: 300, background: T.paper, border: `1px solid ${T.line2}`,
         boxShadow: "0 20px 50px rgba(0,0,0,0.18)", zIndex: 501,
       }}>
         {/* Header */}
@@ -947,31 +976,74 @@ function ProfileMenu({ name, email, onClose, onSignOut }: {
         {/* Actions */}
         {[
           { label: "Account settings", onClick: () => { onClose(); navigate("/app/account") } },
-          { label: "Keyboard shortcuts", onClick: onClose },
-          { label: "What's new", onClick: onClose },
         ].map(({ label, onClick }) => (
           <div key={label} onClick={onClick} style={{ padding: "13px 20px", borderBottom: `1px solid ${T.line}`, fontFamily: FONT_BODY, fontSize: 14, color: T.ink, cursor: "pointer" }}>
             {label}
           </div>
         ))}
 
-        {/* Family switcher */}
+        {/* Family members */}
         <div style={{ padding: "14px 20px", borderBottom: `1px solid ${T.line}` }}>
-          <div style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.18em", color: T.mute, marginBottom: 10 }}>SWITCH PROFILE</div>
-          {familyMembers.map((m) => (
-            <div key={m.label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, cursor: "pointer" }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.ink, color: T.paper, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_MONO, fontSize: 10 }}>
-                {m.initials}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.18em", color: T.mute }}>FAMILY PROFILES</div>
+            {!adding && (
+              <div onClick={() => setAdding(true)} style={{ fontFamily: FONT_MONO, fontSize: 9, letterSpacing: "0.14em", color: T.accent, cursor: "pointer" }}>+ ADD</div>
+            )}
+          </div>
+
+          {/* You — always first */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.ink, color: T.paper, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_MONO, fontSize: 10, flexShrink: 0 }}>
+              {initials(name || "ME")}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: F.display, fontSize: 15, color: T.ink }}>{name || "You"}</div>
+              <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 12, color: T.mute }}>Primary</div>
+            </div>
+          </div>
+
+          {/* Added family members */}
+          {members.map((m) => (
+            <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: T.cream, border: `1px solid ${T.line2}`, color: T.ink, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_MONO, fontSize: 10, flexShrink: 0 }}>
+                {initials(m.name)}
               </div>
-              <div>
-                <div style={{ fontFamily: F.display, fontSize: 15, color: T.ink }}>{m.label}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: F.display, fontSize: 15, color: T.ink }}>{m.name}</div>
                 <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 12, color: T.mute }}>{m.relation}</div>
               </div>
+              <div onClick={() => removeMember(m.id)} style={{ fontFamily: FONT_MONO, fontSize: 11, color: T.mute, cursor: "pointer", padding: "2px 6px" }}>×</div>
             </div>
           ))}
-          <div style={{ fontFamily: F.display, fontStyle: "italic", fontSize: 13, color: T.mute, marginTop: 6 }}>
-            Family plans coming soon.
-          </div>
+
+          {/* Add form */}
+          {adding && (
+            <div style={{ marginTop: 10, padding: "12px 0 4px", borderTop: `1px solid ${T.line}` }}>
+              <input
+                autoFocus
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addMember()}
+                placeholder="Name"
+                style={{ width: "100%", boxSizing: "border-box", background: T.paper, border: `1px solid ${T.line2}`, color: T.ink, padding: "8px 10px", fontFamily: FONT_BODY, fontSize: 13, outline: "none", marginBottom: 8 }}
+                onFocus={(e) => (e.target.style.borderColor = T.ink)}
+                onBlur={(e) => (e.target.style.borderColor = T.line2)}
+              />
+              <select
+                value={newRelation}
+                onChange={(e) => setNewRelation(e.target.value)}
+                style={{ width: "100%", boxSizing: "border-box", background: T.paper, border: `1px solid ${T.line2}`, color: T.ink, padding: "8px 10px", fontFamily: FONT_BODY, fontSize: 13, outline: "none", marginBottom: 10, appearance: "none" }}
+              >
+                {["Partner", "Spouse", "Child", "Parent", "Sibling", "Other"].map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={addMember} style={{ flex: 2, background: T.ink, color: T.paper, border: "none", padding: "9px 0", fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.14em", cursor: "pointer" }}>ADD →</button>
+                <button onClick={() => { setAdding(false); setNewName(""); }} style={{ flex: 1, background: "none", border: `1px solid ${T.line2}`, color: T.mute, padding: "9px 0", fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.14em", cursor: "pointer" }}>CANCEL</button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sign out */}
